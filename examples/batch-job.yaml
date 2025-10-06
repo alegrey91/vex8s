@@ -1,0 +1,65 @@
+---
+# Example 6: Job with security constraints
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: data-processor-secure
+  namespace: default
+spec:
+  template:
+    metadata:
+      labels:
+        app: data-processor
+    spec:
+      restartPolicy: OnFailure
+      
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      
+      containers:
+      - name: processor
+        # Alpine 3.12 has multiple CVEs
+        image: alpine:3.12
+        
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "Processing data..."
+            sleep 10
+            echo "Done"
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        
+        volumeMounts:
+        - name: work-dir
+          mountPath: /work
+        - name: tmp
+          mountPath: /tmp
+        
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+      
+      volumes:
+      - name: work-dir
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}

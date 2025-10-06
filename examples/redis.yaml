@@ -1,0 +1,80 @@
+---
+# Example 2: Redis with security hardening
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-secure
+  namespace: default
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999  # redis user
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
+      
+      containers:
+      - name: redis
+        # Redis 6.2.0 has CVEs related to privilege escalation and buffer overflows
+        image: redis:6.2.0-alpine
+        
+        command:
+          - redis-server
+          - /etc/redis/redis.conf
+        
+        ports:
+        - containerPort: 6379
+          name: redis
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+          runAsUser: 999
+        
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+        - name: redis-config
+          mountPath: /etc/redis
+        - name: tmp
+          mountPath: /tmp
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-config
+      - name: tmp
+        emptyDir: {}
+  
+  volumeClaimTemplates:
+  - metadata:
+      name: redis-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

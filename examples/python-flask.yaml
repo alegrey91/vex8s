@@ -1,0 +1,77 @@
+---
+# Example 5: Python Flask application
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-app-secure
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flask-app
+  template:
+    metadata:
+      labels:
+        app: flask-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      
+      containers:
+      - name: flask
+        # Python 3.9.0 has known vulnerabilities
+        image: python:3.9.0-slim
+        
+        command: ["python"]
+        args: ["-m", "flask", "run", "--host=0.0.0.0"]
+        
+        ports:
+        - containerPort: 5000
+          name: http
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        
+        env:
+        - name: FLASK_APP
+          value: "app.py"
+        - name: FLASK_ENV
+          value: "production"
+        
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+        - name: pip-cache
+          mountPath: /.cache
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      
+      volumes:
+      - name: app-code
+        emptyDir: {}
+      - name: tmp
+        emptyDir: {}
+      - name: pip-cache
+        emptyDir: {}

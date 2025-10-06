@@ -1,0 +1,92 @@
+---
+# Example 4: Node.js application with security best practices
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nodejs-app-secure
+  namespace: default
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nodejs-app
+  template:
+    metadata:
+      labels:
+        app: nodejs-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      
+      containers:
+      - name: app
+        # Node.js 14.15.0 has multiple CVEs in its dependencies
+        image: node:14.15.0-alpine
+        
+        command: ["node"]
+        args: ["server.js"]
+        
+        ports:
+        - containerPort: 3000
+          name: http
+        
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          privileged: false
+          capabilities:
+            drop:
+              - ALL
+          runAsNonRoot: true
+          runAsUser: 1000
+        
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        
+        volumeMounts:
+        - name: app-code
+          mountPath: /app
+          readOnly: true
+        - name: tmp
+          mountPath: /tmp
+        - name: npm-cache
+          mountPath: /.npm
+        
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      
+      volumes:
+      - name: app-code
+        configMap:
+          name: nodejs-app-code
+      - name: tmp
+        emptyDir: {}
+      - name: npm-cache
+        emptyDir: {}
