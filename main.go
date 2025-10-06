@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"os"
+	"time"
 
 	"github.com/alegrey91/vex8s/pkg/k8s"
 	"github.com/alegrey91/vex8s/pkg/trivy"
 	"github.com/alegrey91/vex8s/pkg/vex"
+	"github.com/briandowns/spinner"
 	govex "github.com/openvex/go-vex/pkg/vex"
 )
 
@@ -19,20 +20,22 @@ func main() {
 	flag.Parse()
 
 	if *manifestPath == "" {
-		log.Fatal("Error: -manifest flag is required")
+		fmt.Println("Error: -manifest flag is required")
+		os.Exit(1)
 	}
 
 	fmt.Printf("[*] Parsing manifest: %s\n", *manifestPath)
 	manifest, err := k8s.ParseManifest(*manifestPath)
 	if err != nil {
-		log.Fatalf("Failed to parse manifest: %v", err)
+		fmt.Printf("Failed to parse manifest: %v", err)
+		os.Exit(1)
 	}
 
 	rules := vex.GetMitigationRules()
 	var allVexDocs []govex.VEX
 
 	kind, _ := manifest["kind"].(string)
-	metadata, _ := manifest["metadata"].(map[string]interface{})
+	metadata, _ := manifest["metadata"].(map[string]any)
 	name, _ := metadata["name"].(string)
 
 	fmt.Printf("[*] Processing %s/%s\n", kind, name)
@@ -56,7 +59,10 @@ func main() {
 
 		var cves []trivy.CVE
 		fmt.Println("[*] Scanning for CVEs...")
+		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		s.Start()
 		cves, err = trivy.ScanImage(image)
+		s.Stop()
 		if err != nil {
 			fmt.Printf("[!] Warning: %v\n", err)
 			cves = []trivy.CVE{}
@@ -82,7 +88,7 @@ func main() {
 
 		vexDoc, err := vex.GenerateVEX(image, mitigated, "vex8s")
 		if err != nil {
-			fmt.Printf("[!] Failed to generate VEX document: %w\n", err)
+			fmt.Printf("[!] Failed to generate VEX document: %v\n", err)
 			os.Exit(1)
 		}
 		allVexDocs = append(allVexDocs, vexDoc)
@@ -91,12 +97,14 @@ func main() {
 	// Write VEX output
 	output, err := json.MarshalIndent(allVexDocs[0], "", "  ")
 	if err != nil {
-		log.Fatalf("Failed to marshal VEX document: %v", err)
+		fmt.Printf("Failed to marshal VEX document: %v", err)
+		os.Exit(1)
 	}
 
 	if *outputPath != "" {
 		if err := os.WriteFile(*outputPath, output, 0644); err != nil {
-			log.Fatalf("Failed to write output file: %v", err)
+			fmt.Printf("Failed to write output file: %v", err)
+			os.Exit(1)
 		}
 		fmt.Printf("[✓] VEX document written to: %s\n", *outputPath)
 	} else {
