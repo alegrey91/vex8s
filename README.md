@@ -1,6 +1,8 @@
 # Vex8s
 
-Vex8s generates [VEX](https://www.ntia.gov/files/ntia/publications/vex_one-page_summary.pdf) documents by parsing the Kubernetes `securityContext` configuration.
+Vex8s generates [VEX](https://www.ntia.gov/files/ntia/publications/vex_one-page_summary.pdf) documents by correlating container vulnerabilities with Kubernetes `securityContext` to determine which CVEs are actually exploitable in your cluster.
+
+Please note, this is currently just a PoC under active development.
 
 ## Installation
 
