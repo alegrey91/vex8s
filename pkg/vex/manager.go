@@ -3,6 +3,7 @@ package vex
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/alegrey91/vex8s/pkg/k8s"
@@ -46,13 +47,7 @@ func GetMitigationRules() []CVEMitigation {
 			CVEPattern:  ".*container.*escape.*",
 			Description: "Container escape vulnerabilities",
 			CheckFunc: func(sc *k8s.SecurityContext) bool {
-				hasDropAll := false
-				for _, cap := range sc.CapabilitiesDrop {
-					if cap == "ALL" {
-						hasDropAll = true
-						break
-					}
-				}
+				hasDropAll := slices.Contains(sc.CapabilitiesDrop, "ALL")
 				return (sc.Privileged == nil || !*sc.Privileged) &&
 					(sc.AllowPrivilegeEscalation == nil || !*sc.AllowPrivilegeEscalation) &&
 					hasDropAll
