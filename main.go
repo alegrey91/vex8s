@@ -144,12 +144,10 @@ func main() {
 		}
 		report.Enrich(cves)
 
-		var mitigated []vex.MitigatedCVE
+		var mitigated []trivy.CVE
 		for _, classifiedCVE := range report.Classification {
 			if classifier.IsCVEMitigated(classifiedCVE, podSpec) {
-				mitigated = append(mitigated, vex.MitigatedCVE{
-					CVE: *classifiedCVE.CVE,
-				})
+				mitigated = append(mitigated, *classifiedCVE.CVE)
 			}
 		}
 
