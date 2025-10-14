@@ -15,7 +15,6 @@ import (
 	"github.com/alegrey91/vex8s/pkg/vex"
 	"github.com/briandowns/spinner"
 	govex "github.com/openvex/go-vex/pkg/vex"
-	"github.com/tmc/langchaingo/jsonschema"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/ollama"
 )
@@ -23,19 +22,21 @@ import (
 func main() {
 	manifestPath := flag.String("manifest", "", "Path to Kubernetes manifest YAML")
 	outputPath := flag.String("output", "", "Output VEX file path")
+	ollamaModel := flag.String("llm.model", "deepseek-r1:7b", "LLM model")
+	ollamaURL := flag.String("llm.url", "http://127.0.0.1:11434/", "LLM server URL")
 	showPrompt := flag.Bool("show-prompt", false, "Show the generated prompt")
 	showAnswer := flag.Bool("show-answer", false, "Show the generated answer")
 	flag.Parse()
 
 	if *manifestPath == "" {
-		fmt.Println("Error: -manifest flag is required")
+		fmt.Println("[!] Error: -manifest flag is required")
 		os.Exit(1)
 	}
 
 	fmt.Printf("[*] Parsing manifest: %s\n", *manifestPath)
 	podSpec, err := k8s.ParseManifestPodSpec(*manifestPath)
 	if err != nil {
-		fmt.Printf("Failed to parse manifest: %v", err)
+		fmt.Printf("[!] Failed to parse manifest: %v", err)
 		os.Exit(1)
 	}
 
@@ -59,6 +60,7 @@ func main() {
 		var cves []trivy.CVE
 		fmt.Println("[*] Scanning for CVEs...")
 		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+		s.Suffix = " Scanning image"
 		s.Start()
 		cves, err = trivy.ScanImage(image)
 		s.Stop()
@@ -68,42 +70,7 @@ func main() {
 		}
 		fmt.Printf("[*] Found %d CVEs\n", len(cves))
 
-		schema := &jsonschema.Definition{
-			Type: jsonschema.Object,
-			Properties: map[string]jsonschema.Definition{
-				"classification": {
-					Type: jsonschema.Array,
-					Items: &jsonschema.Definition{
-						Type: jsonschema.Object,
-						Properties: map[string]jsonschema.Definition{
-							"cve": {
-								Type: jsonschema.Object,
-								Properties: map[string]jsonschema.Definition{
-									"id": {
-										Type: jsonschema.String,
-									},
-								},
-								Required: []string{"id"},
-							},
-							"classes": {
-								Type: jsonschema.Array,
-								Items: &jsonschema.Definition{
-									Type: jsonschema.Object,
-									Properties: map[string]jsonschema.Definition{
-										"name": {
-											Type: jsonschema.String,
-										},
-									},
-									Required: []string{"name"},
-								},
-							},
-						},
-						Required: []string{"cve", "classes"},
-					},
-				},
-			},
-			Required: []string{"classification"},
-		}
+		schema := classifier.GetReportSchema()
 		schemaJ, err := schema.MarshalJSON()
 		if err != nil {
 			fmt.Printf("[!] Failed to marshall JSON schema: %v", err)
@@ -120,16 +87,23 @@ func main() {
 		}
 
 		llm, err := ollama.New(
-			ollama.WithModel("granite3.1-dense"),
-			ollama.WithServerURL("http://127.0.0.1:11434/"),
+			ollama.WithModel(*ollamaModel),
+			ollama.WithServerURL(*ollamaURL),
 		)
 		if err != nil {
 			fmt.Printf("[!] Failed to setup ollama: %v\n", err)
 			os.Exit(1)
 		}
+		s.Suffix = " Calling LLM"
+		s.Start()
 		answer, err := llm.Call(context.Background(), input,
 			llms.WithTemperature(0.8),
+			llms.WithJSONMode(),
+			// Add line below when the PR will be merged:
+			// https://github.com/tmc/langchaingo/pull/1302
+			// llms.WithJSONSchema(schema),
 		)
+		s.Stop()
 		if err != nil {
 			fmt.Printf("[!] Failed to call ollama: %v\n", err)
 			os.Exit(1)
@@ -141,6 +115,7 @@ func main() {
 		var report *classifier.Report
 		if err = json.Unmarshal([]byte(answer), &report); err != nil {
 			fmt.Printf("[!] Unparsable JSON output from LLM: %v: %q", err, answer)
+			os.Exit(1)
 		}
 		report.Enrich(cves)
 
