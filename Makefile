@@ -13,6 +13,7 @@ build:
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p ./bin
 	go build -o $(BINARY_PATH) main.go
+	chmod +x $(BINARY_PATH)
 	@echo "✓ Binary built: $(BINARY_PATH)"
 
 ## clean: Remove build artifacts
