@@ -3,61 +3,77 @@ package k8s
 import (
 	"fmt"
 	"os"
-	"strings"
 
-	"gopkg.in/yaml.v3"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime/serializer"
+	"k8s.io/client-go/kubernetes/scheme"
 )
 
-// ParseManifest parses a Kubernetes manifest YAML file
-func ParseManifest(filepath string) (map[string]any, error) {
-	data, err := os.ReadFile(filepath)
+// ParseManifestPodSpec reads a Kubernetes manifest file and extracts the PodSpec
+// Supported kinds: Job, Deployment, StatefulSet, DaemonSet, CronJob, Pod
+func ParseManifestPodSpec(manifestPath string) (*corev1.PodSpec, error) {
+	// Read the manifest file
+	data, err := os.ReadFile(manifestPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
+		return nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}
 
-	decoder := yaml.NewDecoder(strings.NewReader(string(data)))
+	// Create a decoder
+	decode := serializer.NewCodecFactory(scheme.Scheme).UniversalDeserializer().Decode
 
-	var doc map[string]any
-	err = decoder.Decode(&doc)
+	// Decode the manifest
+	obj, gvk, err := decode(data, nil, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed decoding manifest: %w", err)
+		return nil, fmt.Errorf("failed to decode manifest: %w", err)
 	}
 
-	return doc, nil
-}
-
-// ExtractContainers extracts container specs from a manifest
-func ExtractContainers(manifest map[string]any) []map[string]any {
-	var containers []map[string]any
-
-	spec, ok := manifest["spec"].(map[string]any)
-	if !ok {
-		return containers
-	}
-
-	kind, _ := manifest["kind"].(string)
-	if kind == "Deployment" || kind == "StatefulSet" || kind == "DaemonSet" || kind == "Job" {
-		template, ok := spec["template"].(map[string]any)
-		if ok {
-			spec, _ = template["spec"].(map[string]any)
+	// Extract PodSpec based on the Kind
+	switch gvk.Kind {
+	case "Pod":
+		pod, ok := obj.(*corev1.Pod)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast to Pod")
 		}
-	}
+		return &pod.Spec, nil
 
-	if containersList, ok := spec["containers"].([]any); ok {
-		for _, c := range containersList {
-			if container, ok := c.(map[string]any); ok {
-				containers = append(containers, container)
-			}
+	case "Deployment":
+		deployment, ok := obj.(*appsv1.Deployment)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast to Deployment")
 		}
-	}
+		return &deployment.Spec.Template.Spec, nil
 
-	if initContainersList, ok := spec["initContainers"].([]any); ok {
-		for _, c := range initContainersList {
-			if container, ok := c.(map[string]any); ok {
-				containers = append(containers, container)
-			}
+	case "StatefulSet":
+		statefulSet, ok := obj.(*appsv1.StatefulSet)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast to StatefulSet")
 		}
-	}
+		return &statefulSet.Spec.Template.Spec, nil
 
-	return containers
+	case "DaemonSet":
+		daemonSet, ok := obj.(*appsv1.DaemonSet)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast to DaemonSet")
+		}
+		return &daemonSet.Spec.Template.Spec, nil
+
+	case "Job":
+		job, ok := obj.(*batchv1.Job)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast to Job")
+		}
+		return &job.Spec.Template.Spec, nil
+
+	case "CronJob":
+		cronJob, ok := obj.(*batchv1.CronJob)
+		if !ok {
+			return nil, fmt.Errorf("failed to cast to CronJob")
+		}
+		return &cronJob.Spec.JobTemplate.Spec.Template.Spec, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported kind: %s (supported: Pod, Deployment, StatefulSet, DaemonSet, Job, CronJob)", gvk.Kind)
+	}
 }

@@ -1,22 +1,30 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"time"
 
+	"github.com/alegrey91/vex8s/pkg/classifier"
 	"github.com/alegrey91/vex8s/pkg/k8s"
+	"github.com/alegrey91/vex8s/pkg/llm"
 	"github.com/alegrey91/vex8s/pkg/trivy"
 	"github.com/alegrey91/vex8s/pkg/vex"
 	"github.com/briandowns/spinner"
 	govex "github.com/openvex/go-vex/pkg/vex"
+	"github.com/tmc/langchaingo/jsonschema"
+	"github.com/tmc/langchaingo/llms"
+	"github.com/tmc/langchaingo/llms/ollama"
 )
 
 func main() {
 	manifestPath := flag.String("manifest", "", "Path to Kubernetes manifest YAML")
 	outputPath := flag.String("output", "", "Output VEX file path")
+	showPrompt := flag.Bool("show-prompt", false, "Show the generated prompt")
+	showAnswer := flag.Bool("show-answer", false, "Show the generated answer")
 	flag.Parse()
 
 	if *manifestPath == "" {
@@ -25,37 +33,28 @@ func main() {
 	}
 
 	fmt.Printf("[*] Parsing manifest: %s\n", *manifestPath)
-	manifest, err := k8s.ParseManifest(*manifestPath)
+	podSpec, err := k8s.ParseManifestPodSpec(*manifestPath)
 	if err != nil {
 		fmt.Printf("Failed to parse manifest: %v", err)
 		os.Exit(1)
 	}
 
-	rules := vex.GetMitigationRules()
 	var allVexDocs []govex.VEX
 
-	kind, _ := manifest["kind"].(string)
-	metadata, _ := manifest["metadata"].(map[string]any)
-	name, _ := metadata["name"].(string)
+	fmt.Printf("[*] Processing\n")
 
-	fmt.Printf("[*] Processing %s/%s\n", kind, name)
-
-	containers := k8s.ExtractContainers(manifest)
-	podSecCtx := k8s.ExtractPodSecurityContext(manifest)
-
-	for _, container := range containers {
-		containerName, _ := container["name"].(string)
-		image, _ := container["image"].(string)
+	for _, container := range podSpec.Containers {
+		containerName := container.Name
+		image := container.Image
 
 		fmt.Printf("[+] Container: %s\n", containerName)
 		fmt.Printf("Image: %s\n", image)
 
-		sc := k8s.ExtractSecurityContext(container, podSecCtx)
 		fmt.Printf("Security Context:\n")
-		fmt.Printf("  - runAsNonRoot: %v\n", boolPtrToString(sc.RunAsNonRoot))
-		fmt.Printf("  - allowPrivilegeEscalation: %v\n", boolPtrToString(sc.AllowPrivilegeEscalation))
-		fmt.Printf("  - readOnlyRootFilesystem: %v\n", boolPtrToString(sc.ReadOnlyRootFilesystem))
-		fmt.Printf("  - capabilities.drop: %v\n", sc.CapabilitiesDrop)
+		fmt.Printf("  - runAsNonRoot: %v\n", boolPtrToString(container.SecurityContext.RunAsNonRoot))
+		fmt.Printf("  - allowPrivilegeEscalation: %v\n", boolPtrToString(container.SecurityContext.AllowPrivilegeEscalation))
+		fmt.Printf("  - readOnlyRootFilesystem: %v\n", boolPtrToString(container.SecurityContext.ReadOnlyRootFilesystem))
+		fmt.Printf("  - capabilities: %v\n", container.SecurityContext.Capabilities.Drop)
 
 		var cves []trivy.CVE
 		fmt.Println("[*] Scanning for CVEs...")
@@ -69,22 +68,92 @@ func main() {
 		}
 		fmt.Printf("[*] Found %d CVEs\n", len(cves))
 
-		var mitigated []vex.MitigatedCVE
-		var unmitigated []trivy.CVE
+		schema := &jsonschema.Definition{
+			Type: jsonschema.Object,
+			Properties: map[string]jsonschema.Definition{
+				"classification": {
+					Type: jsonschema.Array,
+					Items: &jsonschema.Definition{
+						Type: jsonschema.Object,
+						Properties: map[string]jsonschema.Definition{
+							"cve": {
+								Type: jsonschema.Object,
+								Properties: map[string]jsonschema.Definition{
+									"id": {
+										Type: jsonschema.String,
+									},
+								},
+								Required: []string{"id"},
+							},
+							"classes": {
+								Type: jsonschema.Array,
+								Items: &jsonschema.Definition{
+									Type: jsonschema.Object,
+									Properties: map[string]jsonschema.Definition{
+										"name": {
+											Type: jsonschema.String,
+										},
+									},
+									Required: []string{"name"},
+								},
+							},
+						},
+						Required: []string{"cve", "classes"},
+					},
+				},
+			},
+			Required: []string{"classification"},
+		}
+		schemaJ, err := schema.MarshalJSON()
+		if err != nil {
+			fmt.Printf("[!] Failed to marshall JSON schema: %v", err)
+		}
 
-		for _, cve := range cves {
-			if rule := vex.IsCVEMitigated(cve, sc, rules); rule != nil {
+		td := llm.TemplateData{
+			CVEList:       cves,
+			VulnClassList: classifier.Classes,
+			Schema:        string(schemaJ),
+		}
+		input := td.GeneratePrompt()
+		if *showPrompt {
+			fmt.Printf("[*] Prompt:\n%s\n", input)
+		}
+
+		llm, err := ollama.New(
+			ollama.WithModel("granite3.1-dense"),
+			ollama.WithServerURL("http://127.0.0.1:11434/"),
+		)
+		if err != nil {
+			fmt.Printf("[!] Failed to setup ollama: %v\n", err)
+			os.Exit(1)
+		}
+		answer, err := llm.Call(context.Background(), input,
+			llms.WithTemperature(0.8),
+		)
+		if err != nil {
+			fmt.Printf("[!] Failed to call ollama: %v\n", err)
+			os.Exit(1)
+		}
+		if *showAnswer {
+			fmt.Printf("[*] Answer:\n%s\n", answer)
+		}
+
+		var report *classifier.Report
+		if err = json.Unmarshal([]byte(answer), &report); err != nil {
+			fmt.Printf("[!] Unparsable JSON output from LLM: %v: %q", err, answer)
+		}
+		report.Enrich(cves)
+
+		var mitigated []vex.MitigatedCVE
+		for _, classifiedCVE := range report.Classification {
+			if classifier.IsCVEMitigated(classifiedCVE, podSpec) {
 				mitigated = append(mitigated, vex.MitigatedCVE{
-					CVE:  cve,
-					Rule: *rule,
+					CVE: *classifiedCVE.CVE,
 				})
-			} else {
-				unmitigated = append(unmitigated, cve)
 			}
 		}
 
 		fmt.Printf("[✓] Mitigated CVEs: %d\n", len(mitigated))
-		fmt.Printf("[✗] Unmitigated CVEs: %d\n", len(unmitigated))
 
 		vexDoc, err := vex.GenerateVEX(image, mitigated, "vex8s")
 		if err != nil {
@@ -97,7 +166,7 @@ func main() {
 	// Write VEX output
 	output, err := json.MarshalIndent(allVexDocs[0], "", "  ")
 	if err != nil {
-		fmt.Printf("Failed to marshal VEX document: %v", err)
+		fmt.Printf("[!] Failed to marshal VEX document: %v", err)
 		os.Exit(1)
 	}
 

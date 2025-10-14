@@ -137,9 +137,8 @@ func GenerateVEX(image string, mitigated []MitigatedCVE, author string) (govex.V
 				},
 			},
 			Status:          govex.StatusNotAffected,
-			Justification:   m.Rule.Justification,
-			ImpactStatement: fmt.Sprintf("Mitigated by Kubernetes securityContext: %s", m.Rule.Description),
-			ActionStatement: fmt.Sprintf("Security controls in place: %s", m.Rule.Controls),
+			Justification:   govex.InlineMitigationsAlreadyExist,
+			ImpactStatement: "Mitigated by Kubernetes securityContext",
 		})
 	}
 	doc.GenerateCanonicalID()

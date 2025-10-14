@@ -1,23 +1,50 @@
 module github.com/alegrey91/vex8s
 
-go 1.22.2
+go 1.24.0
+
+toolchain go1.24.8
 
 require gopkg.in/yaml.v3 v3.0.1
 
 require (
-	github.com/fatih/color v1.7.0 // indirect
-	github.com/mattn/go-colorable v0.1.2 // indirect
-	github.com/mattn/go-isatty v0.0.8 // indirect
+	github.com/dlclark/regexp2 v1.10.0 // indirect
+	github.com/fatih/color v1.17.0 // indirect
+	github.com/fxamacker/cbor/v2 v2.9.0 // indirect
+	github.com/go-logr/logr v1.4.2 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
+	github.com/google/uuid v1.6.0 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.3-0.20250322232337-35a7c28c31ee // indirect
 	github.com/openvex/go-vex v0.2.7 // indirect
 	github.com/package-url/packageurl-go v0.1.3 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.1.0 // indirect
+	github.com/pkoukk/tiktoken-go v0.1.6 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
+	go.yaml.in/yaml/v2 v2.4.2 // indirect
+	golang.org/x/net v0.38.0 // indirect
+	golang.org/x/sys v0.31.0 // indirect
+	golang.org/x/term v0.30.0 // indirect
+	golang.org/x/text v0.23.0 // indirect
+	gopkg.in/inf.v0 v0.9.1 // indirect
+	k8s.io/api v0.34.1 // indirect
+	k8s.io/apimachinery v0.34.1 // indirect
+	k8s.io/klog/v2 v2.130.1 // indirect
+	k8s.io/utils v0.0.0-20250604170112-4c0f3b243397 // indirect
+	sigs.k8s.io/json v0.0.0-20241014173422-cfa47c3a1cc8 // indirect
+	sigs.k8s.io/randfill v1.0.0 // indirect
+	sigs.k8s.io/structured-merge-diff/v6 v6.3.0 // indirect
+	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 require (
 	github.com/briandowns/spinner v1.23.2
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
+	github.com/jbrukh/bayesian v0.0.0-20231117143245-13ae6f916c7a
 	github.com/spf13/cobra v1.10.1 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
+	github.com/tmc/langchaingo v0.1.13
 	github.com/yaml/go-yaml v2.1.0+incompatible
+	k8s.io/client-go v0.34.1
 )
