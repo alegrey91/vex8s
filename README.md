@@ -26,6 +26,16 @@ Below, here's an example of the identified classes for the CVEs.
 | Filesystem Manipulation | `readOnlyRootFilesystem: true`,</br>`runAsNonRoot: true`,</br>(volumes)`readOnly: true` | Vulnerabilities that rely on modifying or writing to files (e.g., replacing binaries, symlink attacks, tampering with configs). |
 | Root-Only | `runAsNonRoot: true`,</br>`runAsUser: >=1000` | CVEs that require root privileges (UID 0) to exploit successfully. |
 
+### Classification
+
+Currently the CVE classification is done by llms. The plan is to extend this to an internal classifier tained ad-hoc for this purpose.
+
+Here's the list of models that seems to work:
+
+* `granite3.1-dense`
+
+* `qwen2.5-coder:7b`
+
 ## Installation
 
 You can install it directly:
