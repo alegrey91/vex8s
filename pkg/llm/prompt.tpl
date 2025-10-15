@@ -10,7 +10,7 @@ Could you please classify them with the following classes of vulnerabilities (pl
 - {{ $class.Name }}: {{ $class.Description }}
 {{ end }}
 
-Please, always answer using the following JSON Schema:
+Please, always answer only by using the following JSON Schema (nothing else):
 {{ .Schema }}
 
 Output format example:

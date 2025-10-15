@@ -65,8 +65,8 @@ func main() {
 		cves, err = trivy.ScanImage(image)
 		s.Stop()
 		if err != nil {
-			fmt.Printf("[!] Warning: %v\n", err)
-			cves = []trivy.CVE{}
+			fmt.Printf("[!] Error: %v\n", err)
+			os.Exit(1)
 		}
 		fmt.Printf("[*] Found %d CVEs\n", len(cves))
 
@@ -89,6 +89,7 @@ func main() {
 		llm, err := ollama.New(
 			ollama.WithModel(*ollamaModel),
 			ollama.WithServerURL(*ollamaURL),
+			ollama.WithFormat("json"),
 		)
 		if err != nil {
 			fmt.Printf("[!] Failed to setup ollama: %v\n", err)
@@ -99,6 +100,9 @@ func main() {
 		answer, err := llm.Call(context.Background(), input,
 			llms.WithTemperature(0.8),
 			llms.WithJSONMode(),
+			// This is to try to reduce the answer randomness
+			// as much as possible. 16 is just a nice number.
+			llms.WithSeed(16),
 			// Add line below when the PR will be merged:
 			// https://github.com/tmc/langchaingo/pull/1302
 			// llms.WithJSONSchema(schema),
