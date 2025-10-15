@@ -22,7 +22,7 @@ import (
 func main() {
 	manifestPath := flag.String("manifest", "", "Path to Kubernetes manifest YAML")
 	outputPath := flag.String("output", "", "Output VEX file path")
-	ollamaModel := flag.String("llm.model", "deepseek-r1:7b", "LLM model")
+	ollamaModel := flag.String("llm.model", "granite3.1-dense", "LLM model")
 	ollamaURL := flag.String("llm.url", "http://127.0.0.1:11434/", "LLM server URL")
 	showPrompt := flag.Bool("show-prompt", false, "Show the generated prompt")
 	showAnswer := flag.Bool("show-answer", false, "Show the generated answer")
