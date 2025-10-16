@@ -36,6 +36,8 @@ Here's the list of models that seems to work:
 
 * `qwen2.5-coder:7b`
 
+* `hf.co/AlicanKiraz0/Cybersecurity-BaronLLM_Offensive_Security_LLM_Q6_K_GGUF:Q6_K`
+
 ## Installation
 
 You can install it directly:

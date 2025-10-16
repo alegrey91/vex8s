@@ -8,7 +8,7 @@
             "mode": "auto",
             "program": "${fileDirname}",
             "args": [
-                "-manifest=examples/postgresql.yaml"
+                "--manifest=examples/daemonset-monitoring.yaml"
             ]
         }
     ]

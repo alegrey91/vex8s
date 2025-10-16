@@ -10,9 +10,6 @@ type ClassifiedCVE struct {
 	Classes []Class
 }
 
-// Report is the expected output from the llm.
-// example:
-// {"cve_id": ["class_name_1", "class_name_2"], "cve_id": ["class_name_2"], "cve_id": ["class_name_1"]}
 type Report struct {
 	Classification []ClassifiedCVE `json:"classification"`
 }
@@ -65,4 +62,8 @@ func (r *Report) Enrich(cves []trivy.CVE) {
 			}
 		}
 	}
+}
+
+func (r *Report) Add(report *Report) {
+	r.Classification = append(r.Classification, report.Classification...)
 }

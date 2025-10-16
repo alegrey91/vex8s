@@ -1,4 +1,4 @@
-package llm_test
+package prompt_test
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/alegrey91/vex8s/pkg/classifier"
-	prompt "github.com/alegrey91/vex8s/pkg/llm"
+	prompt "github.com/alegrey91/vex8s/pkg/prompt"
 	"github.com/alegrey91/vex8s/pkg/trivy"
 )
 
