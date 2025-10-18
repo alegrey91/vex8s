@@ -56,10 +56,10 @@ make build
 
 ```
 # examples/nginx.yaml uses the nginx:1.21.0 image.
-vex8s -manifest examples/nginx.yaml -output nginx.vex.json
+vex8s --manifest=examples/nginx.yaml --output nginx.vex.json
 
 # nginx.vex.json will let trivy suppress the CVEs listed inside.
-trivy image --skip-version-check --vex nginx.vex.json --show-suppressed nginx:1.21.0
+trivy image --skip-version-check --vex=nginx.vex.json --show-suppressed nginx:1.21.0
 ```
 
 ## References
