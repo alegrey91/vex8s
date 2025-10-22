@@ -8,14 +8,15 @@ import (
 
 // CVE represents a vulnerability
 type CVE struct {
-	ID               string `json:"id"`
-	Severity         string `json:"severity"`
-	Title            string `json:"title"`
-	Description      string `json:"description"`
-	PkgName          string `json:"pkgName"`
-	PURL             string `json:"purl"`
-	InstalledVersion string `json:"installedVersion"`
-	FixedVersion     string `json:"fixedVersion"`
+	ID               string   `json:"id"`
+	Severity         string   `json:"severity"`
+	Title            string   `json:"title"`
+	Description      string   `json:"description"`
+	PkgName          string   `json:"pkgName"`
+	PURL             string   `json:"purl"`
+	InstalledVersion string   `json:"installedVersion"`
+	FixedVersion     string   `json:"fixedVersion"`
+	CWEs             []string `json:"cwes"`
 }
 
 // TrivyResult represents Trivy scan output
@@ -30,8 +31,9 @@ type TrivyResult struct {
 			PkgIdentifier   struct {
 				PURL string `json:"PURL"`
 			} `json:"PkgIdentifier"`
-			InstalledVersion string `json:"InstalledVersion"`
-			FixedVersion     string `json:"FixedVersion"`
+			InstalledVersion string   `json:"InstalledVersion"`
+			FixedVersion     string   `json:"FixedVersion"`
+			CweIDs           []string `json:"CweIDs`
 		} `json:"Vulnerabilities"`
 	} `json:"Results"`
 }
@@ -61,6 +63,7 @@ func ScanImage(image string) ([]CVE, error) {
 				PURL:             vuln.PkgIdentifier.PURL,
 				InstalledVersion: vuln.InstalledVersion,
 				FixedVersion:     vuln.FixedVersion,
+				CWEs:             vuln.CweIDs,
 			})
 		}
 	}
