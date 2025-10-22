@@ -14,7 +14,6 @@ import (
 	"github.com/alegrey91/vex8s/pkg/trivy"
 	"github.com/alegrey91/vex8s/pkg/vex"
 	"github.com/briandowns/spinner"
-	govex "github.com/openvex/go-vex/pkg/vex"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +44,7 @@ to quickly create a Cobra application.`,
 		}
 
 		fmt.Printf("[*] Processing\n")
-		var allVexDocs []govex.VEX
+		var totalMitigated []trivy.CVE
 
 		for _, container := range podSpec.Containers {
 			containerName := container.Name
@@ -83,22 +82,18 @@ to quickly create a Cobra application.`,
 				}
 			}
 			fmt.Printf("[✓] Mitigated %d CVEs for container %s\n", len(mitigated), image)
-
-			if len(mitigated) == 0 {
-				continue
-			}
-			vexDoc, err := vex.GenerateVEX(image, mitigated, "vex8s")
-			if err != nil {
-				return fmt.Errorf("[!] Failed to generate VEX document: %w", err)
-			}
-			allVexDocs = append(allVexDocs, vexDoc)
+			totalMitigated = append(totalMitigated, mitigated...)
 		}
 
 		// Write VEX output
-		if len(allVexDocs) == 0 {
+		if len(totalMitigated) == 0 {
 			return nil
 		}
-		output, err := json.MarshalIndent(allVexDocs, "", "  ")
+		vexDoc, err := vex.GenerateVEX(totalMitigated, "vex8s")
+		if err != nil {
+			return fmt.Errorf("[!] Failed to generate VEX document: %w", err)
+		}
+		output, err := json.MarshalIndent(vexDoc, "", "  ")
 		if err != nil {
 			return fmt.Errorf("[!] Failed to marshal VEX document: %w", err)
 		}

@@ -11,7 +11,7 @@ import (
 )
 
 // GenerateVEX generates a VEX document
-func GenerateVEX(image string, mitigated []trivy.CVE, author string) (govex.VEX, error) {
+func GenerateVEX(mitigated []trivy.CVE, author string) (govex.VEX, error) {
 	doc := govex.New()
 
 	doc.Author = author
