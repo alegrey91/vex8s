@@ -8,7 +8,8 @@
             "mode": "auto",
             "program": "${fileDirname}",
             "args": [
-                "--manifest=examples/daemonset-monitoring.yaml"
+                "generate",
+                "--manifest=examples/nginx.yaml"
             ]
         }
     ]
