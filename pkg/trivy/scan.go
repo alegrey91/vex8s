@@ -3,7 +3,11 @@ package trivy
 import (
 	"encoding/json"
 	"fmt"
-	"os/exec"
+	"io"
+	"os"
+
+	trivyCmd "github.com/aquasecurity/trivy/pkg/commands"
+	trivyTypes "github.com/aquasecurity/trivy/pkg/types"
 )
 
 // CVE represents a vulnerability
@@ -19,40 +23,47 @@ type CVE struct {
 	CWEs             []string `json:"cwes"`
 }
 
-// TrivyResult represents Trivy scan output
-type TrivyResult struct {
-	Results []struct {
-		Vulnerabilities []struct {
-			VulnerabilityID string `json:"VulnerabilityID"`
-			Severity        string `json:"Severity"`
-			Title           string `json:"Title"`
-			Description     string `json:"Description"`
-			PkgName         string `json:"PkgName"`
-			PkgIdentifier   struct {
-				PURL string `json:"PURL"`
-			} `json:"PkgIdentifier"`
-			InstalledVersion string   `json:"InstalledVersion"`
-			FixedVersion     string   `json:"FixedVersion"`
-			CweIDs           []string `json:"CweIDs`
-		} `json:"Vulnerabilities"`
-	} `json:"Results"`
-}
-
-// ScanImage scans a container image using Trivy
-func ScanImage(image string) ([]CVE, error) {
-	cmd := exec.Command("trivy", "image", "--format", "json", image)
-	output, err := cmd.Output()
+// Scan scans a container image using Trivy
+func Scan(image string) ([]CVE, error) {
+	reportFile, err := os.CreateTemp("/tmp", "vex8s.*.json")
 	if err != nil {
+		return nil, fmt.Errorf("failed to create temporary report file: %w", err)
+	}
+	defer func() {
+		if err = reportFile.Close(); err != nil {
+			fmt.Printf("failed to close temporary report file", "error", err)
+		}
+
+		if err = os.Remove(reportFile.Name()); err != nil {
+			fmt.Printf("failed to remove temporary repoort file", "error", err)
+		}
+	}()
+
+	app := trivyCmd.NewApp()
+	app.SetArgs([]string{
+		"image",
+		"--format", "json",
+		"--output", reportFile.Name(),
+		"--quiet",
+		image,
+	})
+	if err := app.Execute(); err != nil {
 		return nil, fmt.Errorf("trivy scan failed: %w", err)
 	}
 
-	var result TrivyResult
-	if err := json.Unmarshal(output, &result); err != nil {
-		return nil, fmt.Errorf("failed to parse trivy output: %w", err)
+	reportBytes, err := io.ReadAll(reportFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read output: %w", err)
+	}
+
+	report := trivyTypes.Report{}
+	err = json.Unmarshal(reportBytes, &report)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal report: %w", err)
 	}
 
 	var cves []CVE
-	for _, res := range result.Results {
+	for _, res := range report.Results {
 		for _, vuln := range res.Vulnerabilities {
 			cves = append(cves, CVE{
 				ID:               vuln.VulnerabilityID,
@@ -60,7 +71,7 @@ func ScanImage(image string) ([]CVE, error) {
 				Title:            vuln.Title,
 				Description:      vuln.Description,
 				PkgName:          vuln.PkgName,
-				PURL:             vuln.PkgIdentifier.PURL,
+				PURL:             vuln.PkgIdentifier.PURL.String(),
 				InstalledVersion: vuln.InstalledVersion,
 				FixedVersion:     vuln.FixedVersion,
 				CWEs:             vuln.CweIDs,
