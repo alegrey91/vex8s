@@ -20,10 +20,6 @@ import (
 var (
 	manifestPath string
 	outputPath   string
-	llmModel     string
-	llmURL       string
-	showPrompt   bool
-	showAnswer   bool
 )
 
 // generateCmd represents the generate command
@@ -53,12 +49,12 @@ to quickly create a Cobra application.`,
 			fmt.Printf("[+] Container: %s\n", containerName)
 			fmt.Printf("Image: %s\n", image)
 
-			fmt.Printf("Security Context:\n")
-			fmt.Printf("  - runAsNonRoot: %v\n", boolPtrToString(container.SecurityContext.RunAsNonRoot))
-			fmt.Printf("  - allowPrivilegeEscalation: %v\n", boolPtrToString(container.SecurityContext.AllowPrivilegeEscalation))
-			fmt.Printf("  - readOnlyRootFilesystem: %v\n", boolPtrToString(container.SecurityContext.ReadOnlyRootFilesystem))
-			fmt.Printf("  - capabilities.Drop: %v\n", container.SecurityContext.Capabilities.Drop)
-			fmt.Printf("  - capabilities.Add: %v\n", container.SecurityContext.Capabilities.Add)
+			//fmt.Printf("Security Context:\n")
+			//fmt.Printf("  - runAsNonRoot: %v\n", boolPtrToString(container.SecurityContext.RunAsNonRoot))
+			//fmt.Printf("  - allowPrivilegeEscalation: %v\n", boolPtrToString(container.SecurityContext.AllowPrivilegeEscalation))
+			//fmt.Printf("  - readOnlyRootFilesystem: %v\n", boolPtrToString(container.SecurityContext.ReadOnlyRootFilesystem))
+			//fmt.Printf("  - capabilities.Drop: %v\n", container.SecurityContext.Capabilities.Drop)
+			//fmt.Printf("  - capabilities.Add: %v\n", container.SecurityContext.Capabilities.Add)
 
 			var cves []trivy.CVE
 			fmt.Println("[*] Scanning for CVEs...")
@@ -71,9 +67,9 @@ to quickly create a Cobra application.`,
 				return fmt.Errorf("[!] Error: %w", err)
 			}
 			fmt.Printf("[*] Found %d CVEs\n", len(cves))
-			//for _, cve := range cves {
-			//	fmt.Printf("[%s]: %s\n", cve.ID, cve.CWEs)
-			//}
+			for _, cve := range cves {
+				fmt.Printf("[%s]: %s\n", cve.ID, cve.CWEs)
+			}
 
 			var mitigated []trivy.CVE
 			for _, cve := range cves {
@@ -114,13 +110,9 @@ to quickly create a Cobra application.`,
 func init() {
 	rootCmd.AddCommand(generateCmd)
 
-	generateCmd.Flags().StringVarP(&manifestPath, "manifest", "M", "", "path to Kubernetes manifest YAML")
+	generateCmd.Flags().StringVarP(&manifestPath, "manifest", "m", "", "path to Kubernetes manifest YAML")
 	generateCmd.MarkFlagRequired("manifest")
 	generateCmd.Flags().StringVarP(&outputPath, "output", "O", "", "output VEX file path")
-	generateCmd.Flags().StringVar(&llmModel, "llm.model", "", "llm model")
-	generateCmd.Flags().StringVar(&llmURL, "llm.url", "http://127.0.0.1:11434/", "llm server URL")
-	generateCmd.Flags().BoolVar(&showPrompt, "show.prompt", false, "show the generated prompt")
-	generateCmd.Flags().BoolVar(&showAnswer, "show.answer", false, "show the generated answer")
 }
 
 func boolPtrToString(b *bool) string {
