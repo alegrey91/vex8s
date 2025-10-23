@@ -47,29 +47,30 @@ to quickly create a Cobra application.`,
 			image := container.Image
 
 			fmt.Printf("[+] Container: %s\n", containerName)
-			fmt.Printf("Image: %s\n", image)
+			fmt.Printf("[+] Image: %s\n", image)
 
-			//fmt.Printf("Security Context:\n")
-			//fmt.Printf("  - runAsNonRoot: %v\n", boolPtrToString(container.SecurityContext.RunAsNonRoot))
-			//fmt.Printf("  - allowPrivilegeEscalation: %v\n", boolPtrToString(container.SecurityContext.AllowPrivilegeEscalation))
-			//fmt.Printf("  - readOnlyRootFilesystem: %v\n", boolPtrToString(container.SecurityContext.ReadOnlyRootFilesystem))
-			//fmt.Printf("  - capabilities.Drop: %v\n", container.SecurityContext.Capabilities.Drop)
-			//fmt.Printf("  - capabilities.Add: %v\n", container.SecurityContext.Capabilities.Add)
+			fmt.Printf("[+] Security Context:\n")
+			fmt.Printf("spec.SecurityContext:\n")
+			podSC, _ := json.MarshalIndent(podSpec.SecurityContext, "", "  ")
+			fmt.Println(string(podSC))
+			fmt.Printf("container.SecurityContext:\n")
+			ctSC, _ := json.MarshalIndent(container.SecurityContext, "", "  ")
+			fmt.Println(string(ctSC))
 
 			var cves []trivy.CVE
 			fmt.Println("[*] Scanning for CVEs...")
 			s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
 			s.Suffix = " Scanning image"
 			s.Start()
-			cves, err = trivy.ScanImage(image)
+			cves, err = trivy.Scan(image)
 			s.Stop()
 			if err != nil {
 				return fmt.Errorf("[!] Error: %w", err)
 			}
 			fmt.Printf("[*] Found %d CVEs\n", len(cves))
-			for _, cve := range cves {
-				fmt.Printf("[%s]: %s\n", cve.ID, cve.CWEs)
-			}
+			//for _, cve := range cves {
+			//	fmt.Printf("[%s]: %s\n", cve.ID, cve.CWEs)
+			//}
 
 			var mitigated []trivy.CVE
 			for _, cve := range cves {
