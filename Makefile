@@ -2,6 +2,7 @@
 
 BINARY_NAME=vex8s
 BINARY_PATH=./bin/$(BINARY_NAME)
+BUILD_VARS=GOTOOLCHAIN=go1.25.3 GOEXPERIMENT=jsonv2
 
 .PHONY: all build clean deps lint install-tools help
 
@@ -12,9 +13,15 @@ all: deps build
 build:
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p ./bin
-	go build -o $(BINARY_PATH) main.go
+	$(BUILD_VARS) go build -o $(BINARY_PATH) main.go
 	chmod +x $(BINARY_PATH)
 	@echo "✓ Binary built: $(BINARY_PATH)"
+
+## test: Test unit tests
+test:
+	@echo "Testing $(BINARY_NAME)..."
+	$(BUILD_VARS) go test -v ./...
+	@echo "✓ Tests ran"
 
 ## clean: Remove build artifacts
 clean:
