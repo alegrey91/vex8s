@@ -1,5 +1,7 @@
 # Vex8s
 
+![vex8s](./vex8s.png)
+
 Vex8s generates [VEX](https://www.ntia.gov/files/ntia/publications/vex_one-page_summary.pdf) documents by correlating container vulnerabilities with Kubernetes `securityContext` to determine which CVEs are actually exploitable in your cluster.
 
 Please note, this is an experimental project. Things might change quickly.
