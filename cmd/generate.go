@@ -115,10 +115,3 @@ func init() {
 	generateCmd.MarkFlagRequired("manifest")
 	generateCmd.Flags().StringVarP(&outputPath, "output", "O", "", "output VEX file path")
 }
-
-func boolPtrToString(b *bool) string {
-	if b == nil {
-		return "nil"
-	}
-	return fmt.Sprintf("%t", *b)
-}
