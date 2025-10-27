@@ -6,6 +6,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// hasReadOnlyRootFileSystem ensures that readOnlyRootFileSystem is true.
 func hasReadOnlyRootFileSystem(c *corev1.Container) bool {
 	if c.SecurityContext.ReadOnlyRootFilesystem != nil && *c.SecurityContext.ReadOnlyRootFilesystem {
 		return true
@@ -13,7 +14,9 @@ func hasReadOnlyRootFileSystem(c *corev1.Container) bool {
 	return false
 }
 
+// hasVolumeMountReadOnly ensures that volumeMount.readOnly is true.
 func hasVolumeMountReadOnly(c *corev1.Container) bool {
+	// if we don't have volume mount to check, then we are fine.
 	if len(c.VolumeMounts) == 0 {
 		return true
 	}
@@ -25,6 +28,7 @@ func hasVolumeMountReadOnly(c *corev1.Container) bool {
 	return true
 }
 
+// hasCapabilitiesDropAll ensures that capabilities.Drop is "ALL".
 func hasCapabilitiesDropAll(c *corev1.Container) bool {
 	hasDropAll := false
 	if c.SecurityContext.Capabilities.Drop != nil {
