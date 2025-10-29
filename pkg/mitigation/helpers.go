@@ -6,8 +6,19 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+func containerHasSecurityContext(c *corev1.Container) bool {
+	return c.SecurityContext != nil
+}
+
+func podSpecHasSecurityContext(p *corev1.PodSpec) bool {
+	return p.SecurityContext != nil
+}
+
 // hasReadOnlyRootFileSystem ensures that readOnlyRootFileSystem is true.
 func hasReadOnlyRootFileSystem(c *corev1.Container) bool {
+	if !containerHasSecurityContext(c) {
+		return false
+	}
 	if c.SecurityContext.ReadOnlyRootFilesystem != nil && *c.SecurityContext.ReadOnlyRootFilesystem {
 		return true
 	}
@@ -30,6 +41,9 @@ func hasVolumeMountReadOnly(c *corev1.Container) bool {
 
 // hasCapabilitiesDropAll ensures that capabilities.Drop is "ALL".
 func hasCapabilitiesDropAll(c *corev1.Container) bool {
+	if !containerHasSecurityContext(c) {
+		return false
+	}
 	hasDropAll := false
 	if c.SecurityContext.Capabilities.Drop != nil {
 		hasDropAll = slices.Contains(c.SecurityContext.Capabilities.Drop, "ALL")
@@ -38,8 +52,14 @@ func hasCapabilitiesDropAll(c *corev1.Container) bool {
 }
 
 func hasRunAsNonRoot(p *corev1.PodSpec, c *corev1.Container) bool {
+	if !containerHasSecurityContext(c) {
+		return false
+	}
 	if c.SecurityContext.RunAsNonRoot != nil && *c.SecurityContext.RunAsNonRoot {
 		return true
+	}
+	if !podSpecHasSecurityContext(p) {
+		return false
 	}
 	if p.SecurityContext.RunAsNonRoot != nil && *p.SecurityContext.RunAsNonRoot {
 		return true
@@ -48,6 +68,9 @@ func hasRunAsNonRoot(p *corev1.PodSpec, c *corev1.Container) bool {
 }
 
 func hasAllowPrivilegeEscalation(c *corev1.Container) bool {
+	if !containerHasSecurityContext(c) {
+		return false
+	}
 	if c.SecurityContext.AllowPrivilegeEscalation != nil && !*c.SecurityContext.AllowPrivilegeEscalation {
 		return true
 	}
@@ -55,6 +78,9 @@ func hasAllowPrivilegeEscalation(c *corev1.Container) bool {
 }
 
 func hasPrivileged(c *corev1.Container) bool {
+	if !containerHasSecurityContext(c) {
+		return false
+	}
 	if c.SecurityContext.Privileged != nil && !*c.SecurityContext.Privileged {
 		return true
 	}
@@ -62,8 +88,14 @@ func hasPrivileged(c *corev1.Container) bool {
 }
 
 func hasRunAsUser(p *corev1.PodSpec, c *corev1.Container) bool {
+	if !containerHasSecurityContext(c) {
+		return false
+	}
 	if c.SecurityContext.RunAsUser != nil && *c.SecurityContext.RunAsUser >= 1000 {
 		return true
+	}
+	if !podSpecHasSecurityContext(p) {
+		return false
 	}
 	if p.SecurityContext.RunAsUser != nil && *p.SecurityContext.RunAsUser >= 1000 {
 		return true
@@ -98,20 +130,30 @@ func hasMountPropagation(c *corev1.Container) bool {
 }
 
 func hasResourceLimitCPU(p *corev1.PodSpec, c *corev1.Container) bool {
-	if c.Resources.Limits.Cpu().Format != "" {
+	if c.Resources.Limits.Cpu().Value() != 0 {
 		return true
 	}
-	if p.Resources.Limits.Cpu().Format != "" {
+	// we check only p.Resources because in podSpec
+	// it is defined as *corev1.ResourceRequirements (so a pointer)
+	if p.Resources == nil {
+		return false
+	}
+	if p.Resources.Limits.Cpu().Value() != 0 {
 		return true
 	}
 	return false
 }
 
 func hasResourceLimitMemory(p *corev1.PodSpec, c *corev1.Container) bool {
-	if c.Resources.Limits.Memory().Format != "" {
+	if c.Resources.Limits.Memory().Value() != 0 {
 		return true
 	}
-	if p.Resources.Limits.Memory().Format != "" {
+	// we check only p.Resources because in podSpec
+	// it is defined as *corev1.ResourceRequirements (so a pointer)
+	if p.Resources == nil {
+		return false
+	}
+	if p.Resources.Limits.Memory().Value() != 0 {
 		return true
 	}
 	return false
