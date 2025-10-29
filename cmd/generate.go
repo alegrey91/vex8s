@@ -18,8 +18,10 @@ import (
 )
 
 var (
-	manifestPath string
-	outputPath   string
+	manifestPath   string
+	outputPath     string
+	showCVEs       bool
+	showSecContext bool
 )
 
 // generateCmd represents the generate command
@@ -42,6 +44,12 @@ to quickly create a Cobra application.`,
 		fmt.Printf("[*] Processing\n")
 		var totalMitigated []trivy.CVE
 
+		if showSecContext {
+			fmt.Printf("[+] spec.SecurityContext:\n")
+			podSC, _ := json.MarshalIndent(podSpec.SecurityContext, "", "  ")
+			fmt.Println(string(podSC))
+		}
+
 		for _, container := range podSpec.Containers {
 			containerName := container.Name
 			image := container.Image
@@ -49,13 +57,11 @@ to quickly create a Cobra application.`,
 			fmt.Printf("[+] Container: %s\n", containerName)
 			fmt.Printf("[+] Image: %s\n", image)
 
-			fmt.Printf("[+] Security Context:\n")
-			fmt.Printf("spec.SecurityContext:\n")
-			podSC, _ := json.MarshalIndent(podSpec.SecurityContext, "", "  ")
-			fmt.Println(string(podSC))
-			fmt.Printf("container.SecurityContext:\n")
-			ctSC, _ := json.MarshalIndent(container.SecurityContext, "", "  ")
-			fmt.Println(string(ctSC))
+			if showSecContext {
+				fmt.Printf("[+] container.SecurityContext:\n")
+				ctSC, _ := json.MarshalIndent(container.SecurityContext, "", "  ")
+				fmt.Println(string(ctSC))
+			}
 
 			var cves []trivy.CVE
 			fmt.Println("[*] Scanning for CVEs...")
@@ -68,9 +74,11 @@ to quickly create a Cobra application.`,
 				return fmt.Errorf("[!] Error: %w", err)
 			}
 			fmt.Printf("[*] Found %d CVEs\n", len(cves))
-			//for _, cve := range cves {
-			//	fmt.Printf("[%s]: %s\n", cve.ID, cve.CWEs)
-			//}
+			if showCVEs {
+				for _, cve := range cves {
+					fmt.Printf("[%s]: %s\n", cve.ID, cve.CWEs)
+				}
+			}
 
 			var mitigated []trivy.CVE
 			for _, cve := range cves {
@@ -114,4 +122,6 @@ func init() {
 	generateCmd.Flags().StringVarP(&manifestPath, "manifest", "m", "", "path to Kubernetes manifest YAML")
 	generateCmd.MarkFlagRequired("manifest")
 	generateCmd.Flags().StringVarP(&outputPath, "output", "O", "", "output VEX file path")
+	generateCmd.Flags().BoolVar(&showCVEs, "show.cves", false, "show CVEs found")
+	generateCmd.Flags().BoolVar(&showSecContext, "show.sc", false, "show SecurityContext found")
 }
