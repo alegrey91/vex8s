@@ -71,7 +71,11 @@ func hasRunAsUser(p *corev1.PodSpec, c *corev1.Container) bool {
 	return false
 }
 
+// hasHostPath checks that volumes doens't have the hostPath option set.
 func hasHostPath(p *corev1.PodSpec) bool {
+	if len(p.Volumes) == 0 {
+		return false
+	}
 	for _, v := range p.Volumes {
 		if v.HostPath != nil {
 			return true

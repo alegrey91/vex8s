@@ -167,3 +167,180 @@ func Test_hasCapabilitiesDropAll(t *testing.T) {
 		})
 	}
 }
+
+func Test_hasRunAsNonRoot(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *corev1.PodSpec
+		c    *corev1.Container
+		want bool
+	}{
+		{
+			name: "runAsNonRoot is true",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					RunAsNonRoot: boolPtr(true),
+				},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					RunAsNonRoot: boolPtr(true),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "runAsNonRoot is false",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					RunAsNonRoot: boolPtr(false),
+				},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					RunAsNonRoot: boolPtr(false),
+				},
+			},
+			want: false,
+		},
+		{
+			name: "runAsNonRoot is not set at podSpec / runAsNonRoot is true at container",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					RunAsNonRoot: boolPtr(true),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "runAsNonRoot is true at podSpec / runAsNonRoot is not set at container",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					RunAsNonRoot: boolPtr(true),
+				},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{},
+			},
+			want: true,
+		},
+		{
+			name: "runAsNonRoot is not set at podSpec and container",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{},
+			},
+			want: false,
+		},
+		{
+			name: "runAsNonRoot is true at container but false at podSpec",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					RunAsNonRoot: boolPtr(false),
+				},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					RunAsNonRoot: boolPtr(true),
+				},
+			},
+			want: true,
+		},
+		{
+			name: "runAsNonRoot is false at container but true at podSpec",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					RunAsNonRoot: boolPtr(true),
+				},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					RunAsNonRoot: boolPtr(false),
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasRunAsNonRoot(tt.p, tt.c)
+			if tt.want != got {
+				t.Errorf("hasRunAsNonRoot() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_hasHostPath(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *corev1.PodSpec
+		want bool
+	}{
+		{
+			name: "hostPath not present",
+			p: &corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{
+						Name:         "test_volume_1",
+						VolumeSource: corev1.VolumeSource{},
+					},
+				},
+			},
+			want: false,
+		},
+		{
+			name: "hostPath is set",
+			p: &corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{
+						Name: "test_volume_1",
+						VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/etc",
+							},
+						},
+					},
+				},
+			},
+			want: true,
+		},
+		{
+			name: "hostPath is set with multiple volumens",
+			p: &corev1.PodSpec{
+				Volumes: []corev1.Volume{
+					{
+						Name:         "test_volume_1",
+						VolumeSource: corev1.VolumeSource{},
+					},
+					{
+						Name: "test_volume_1",
+						VolumeSource: corev1.VolumeSource{
+							HostPath: &corev1.HostPathVolumeSource{
+								Path: "/etc",
+							},
+						},
+					},
+					{
+						Name:         "test_volume_1",
+						VolumeSource: corev1.VolumeSource{},
+					},
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasHostPath(tt.p)
+			if tt.want != got {
+				t.Errorf("hasHostPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
