@@ -123,5 +123,5 @@ func init() {
 	generateCmd.MarkFlagRequired("manifest")
 	generateCmd.Flags().StringVarP(&outputPath, "output", "O", "", "output VEX file path")
 	generateCmd.Flags().BoolVar(&showCVEs, "show.cves", false, "show CVEs found")
-	generateCmd.Flags().BoolVar(&showSecContext, "show.sc", false, "show SecurityContext found")
+	generateCmd.Flags().BoolVar(&showSecContext, "show.sec", false, "show SecurityContext found")
 }
