@@ -42,7 +42,12 @@ func GenerateVEX(mitigated []trivy.CVE, author string) (govex.VEX, error) {
 			ImpactStatement: "Mitigated by Kubernetes securityContext",
 		})
 	}
-	doc.GenerateCanonicalID()
+
+	cID, err := doc.GenerateCanonicalID()
+	if err != nil {
+		return doc, err
+	}
+	doc.ID = cID
 
 	return doc, nil
 }
