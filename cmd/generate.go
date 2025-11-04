@@ -23,22 +23,13 @@ var (
 	showCVEs       bool
 	showSecContext bool
 	vexAuthor      string
-)
-
-const (
-	defaultVexAuthor = "vex8s"
+	vexAuthorRole  string
 )
 
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "generates VEX documents",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("[*] Parsing manifest: %s\n", manifestPath)
 		podSpec, err := k8s.ParseManifestPodSpec(manifestPath)
@@ -99,7 +90,14 @@ to quickly create a Cobra application.`,
 		if len(totalMitigated) == 0 {
 			return nil
 		}
-		vexDoc, err := vex.GenerateVEX(totalMitigated, vexAuthor)
+
+		vexInfo := vex.VEXInfo{
+			Author:     vexAuthor,
+			AuthorRole: vexAuthorRole,
+			// Tooling value is not negotiable
+			Tooling: "vex8s",
+		}
+		vexDoc, err := vex.GenerateVEX(totalMitigated, vexInfo)
 		if err != nil {
 			return fmt.Errorf("[!] Failed to generate VEX document: %w", err)
 		}
@@ -133,5 +131,6 @@ func init() {
 	generateCmd.Flags().BoolVar(&showSecContext, "show.sec", false, "show SecurityContext found")
 
 	// VEX flags
-	generateCmd.Flags().StringVar(&vexAuthor, "vex.author", defaultVexAuthor, "set VEX author")
+	generateCmd.Flags().StringVar(&vexAuthor, "vex.author", "", "set VEX author")
+	generateCmd.Flags().StringVar(&vexAuthorRole, "vex.author-role", "", "set VEX author role")
 }

@@ -4,17 +4,24 @@ import (
 	"fmt"
 
 	"github.com/alegrey91/vex8s/pkg/trivy"
-	"github.com/openvex/go-vex/pkg/vex"
 
 	govex "github.com/openvex/go-vex/pkg/vex"
 	"github.com/package-url/packageurl-go"
 )
 
+type VEXInfo struct {
+	Author     string
+	AuthorRole string
+	Tooling    string
+}
+
 // GenerateVEX generates a VEX document
-func GenerateVEX(mitigated []trivy.CVE, author string) (govex.VEX, error) {
+func GenerateVEX(mitigated []trivy.CVE, info VEXInfo) (govex.VEX, error) {
 	doc := govex.New()
 
-	doc.Author = author
+	doc.Author = info.Author
+	doc.AuthorRole = info.AuthorRole
+	doc.Tooling = info.Tooling
 
 	// Add mitigated CVEs
 	for _, m := range mitigated {
@@ -32,7 +39,7 @@ func GenerateVEX(mitigated []trivy.CVE, author string) (govex.VEX, error) {
 					Component: govex.Component{
 						ID: purl.ToString(),
 						Identifiers: map[govex.IdentifierType]string{
-							vex.PURL: purl.ToString(),
+							govex.PURL: purl.ToString(),
 						},
 					},
 				},
