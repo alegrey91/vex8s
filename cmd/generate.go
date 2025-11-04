@@ -22,6 +22,11 @@ var (
 	outputPath     string
 	showCVEs       bool
 	showSecContext bool
+	vexAuthor      string
+)
+
+const (
+	defaultVexAuthor = "vex8s"
 )
 
 // generateCmd represents the generate command
@@ -94,7 +99,7 @@ to quickly create a Cobra application.`,
 		if len(totalMitigated) == 0 {
 			return nil
 		}
-		vexDoc, err := vex.GenerateVEX(totalMitigated, "vex8s")
+		vexDoc, err := vex.GenerateVEX(totalMitigated, vexAuthor)
 		if err != nil {
 			return fmt.Errorf("[!] Failed to generate VEX document: %w", err)
 		}
@@ -122,6 +127,11 @@ func init() {
 	generateCmd.Flags().StringVarP(&manifestPath, "manifest", "m", "", "path to Kubernetes manifest YAML")
 	generateCmd.MarkFlagRequired("manifest")
 	generateCmd.Flags().StringVarP(&outputPath, "output", "O", "", "output VEX file path")
+
+	// Show flags
 	generateCmd.Flags().BoolVar(&showCVEs, "show.cves", false, "show CVEs found")
 	generateCmd.Flags().BoolVar(&showSecContext, "show.sec", false, "show SecurityContext found")
+
+	// VEX flags
+	generateCmd.Flags().StringVar(&vexAuthor, "vex.author", defaultVexAuthor, "set VEX author")
 }
