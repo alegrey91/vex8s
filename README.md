@@ -12,7 +12,7 @@ The project aims to assess the exploitability of known CVEs within Kubernetes wo
 
 It is based on the following concept:
 
-* Each CVE is categorized into one or more vulnerability classes (CWE)
+* Each CVE is categorized into one or more vulnerability classes ([CWE](https://cwe.mitre.org/index.html))
 * Each class, maps to a set of Kubernetes `securityContext` settings that can block or reduce the impact.
 * By parsing a Kubernetes manifest, we can inspect the container's `securityContext` to evaluate whether the relevant settings are in place.
 * Combining both analyses allows the system to determine if a CVE is exploitable in a given workload configuration.
