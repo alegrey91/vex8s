@@ -1,4 +1,4 @@
-# Makefile for k8s-cve-analyzer
+# Makefile for vex8s
 
 BINARY_NAME=vex8s
 BINARY_PATH=./bin/$(BINARY_NAME)
