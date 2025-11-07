@@ -24,7 +24,7 @@ It is based on the following concept:
 You can install it directly:
 
 ```
-go install github.com/alegrey91/vex8s@latest
+GOEXPERIMENT=jsonv2 go install github.com/alegrey91/vex8s@latest
 ```
 
 Or you can build it manually:
