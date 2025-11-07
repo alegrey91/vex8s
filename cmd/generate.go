@@ -124,13 +124,13 @@ func init() {
 
 	generateCmd.Flags().StringVarP(&manifestPath, "manifest", "m", "", "path to Kubernetes manifest YAML")
 	generateCmd.MarkFlagRequired("manifest")
-	generateCmd.Flags().StringVarP(&outputPath, "output", "O", "", "output VEX file path")
+	generateCmd.Flags().StringVarP(&outputPath, "output", "o", "", "output VEX file path")
 
 	// Show flags
 	generateCmd.Flags().BoolVar(&showCVEs, "show.cves", false, "show CVEs found")
 	generateCmd.Flags().BoolVar(&showSecContext, "show.sec", false, "show SecurityContext found")
 
 	// VEX flags
-	generateCmd.Flags().StringVar(&vexAuthor, "vex.author", "", "set VEX author")
-	generateCmd.Flags().StringVar(&vexAuthorRole, "vex.author-role", "", "set VEX author role")
+	generateCmd.Flags().StringVar(&vexAuthor, "vex.author", "Unknown Author", "set VEX author")
+	generateCmd.Flags().StringVar(&vexAuthorRole, "vex.role", "", "set VEX author role")
 }
