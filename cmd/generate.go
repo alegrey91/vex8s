@@ -18,18 +18,29 @@ import (
 )
 
 var (
-	manifestPath   string
-	outputPath     string
-	showCVEs       bool
-	showSecContext bool
-	vexAuthor      string
-	vexAuthorRole  string
+	manifestPath       string
+	outputPath         string
+	showCVEs           bool
+	showSecContext     bool
+	vexAuthor          string
+	vexAuthorRole      string
+	suppressDisclaimer bool
+)
+
+const (
+	disclaimerMessage = `[!] WARNING:
+    Please, review the VEX statements generated to be sure 
+    that they match mitigation configured in your 
+    running cluster, because the tool generates its 
+    results based on configurations that might be changed 
+    during runtime, so you can be sure that CVEs are 
+    correctly suppressed.`
 )
 
 // generateCmd represents the generate command
 var generateCmd = &cobra.Command{
 	Use:   "generate",
-	Short: "generates VEX documents",
+	Short: "Generates VEX documents",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("[*] Parsing manifest: %s\n", manifestPath)
 		podSpec, err := k8s.ParseManifestPodSpec(manifestPath)
@@ -106,6 +117,9 @@ var generateCmd = &cobra.Command{
 			return fmt.Errorf("[!] Failed to marshal VEX document: %w", err)
 		}
 
+		if !suppressDisclaimer {
+			fmt.Println(disclaimerMessage)
+		}
 		if outputPath != "" {
 			if err := os.WriteFile(outputPath, output, 0644); err != nil {
 				return fmt.Errorf("failed to write output file: %w", err)
@@ -133,4 +147,7 @@ func init() {
 	// VEX flags
 	generateCmd.Flags().StringVar(&vexAuthor, "vex.author", "Unknown Author", "set VEX author")
 	generateCmd.Flags().StringVar(&vexAuthorRole, "vex.role", "", "set VEX author role")
+
+	// Suppress flags
+	generateCmd.Flags().BoolVar(&suppressDisclaimer, "suppress.disclaimer", false, "suppress disclaimer")
 }
