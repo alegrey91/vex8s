@@ -162,13 +162,22 @@ func hasResourceLimitMemory(p *corev1.PodSpec, c *corev1.Container) bool {
 // hasSeccompProfileTypeRuntimeDefault checks that the RuntimeDefault profile
 // is used by Seccomp
 func hasSeccompProfileTypeRuntimeDefault(p *corev1.PodSpec, c *corev1.Container) bool {
+	if !containerHasSecurityContext(c) {
+		return false
+	}
 	if c.SecurityContext.SeccompProfile != nil &&
 		c.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeRuntimeDefault {
 		return true
 	}
-	if p.SecurityContext.SeccompProfile != nil &&
+
+	if !podSpecHasSecurityContext(p) {
+		return false
+	}
+	if p.SecurityContext != nil &&
+		p.SecurityContext.SeccompProfile != nil &&
 		p.SecurityContext.SeccompProfile.Type == corev1.SeccompProfileTypeRuntimeDefault {
 		return true
 	}
+
 	return false
 }

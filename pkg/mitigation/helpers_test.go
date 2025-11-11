@@ -344,3 +344,55 @@ func Test_hasHostPath(t *testing.T) {
 		})
 	}
 }
+
+func Test_hasSeccompProfileTypeRuntimeDefault(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *corev1.PodSpec
+		c    *corev1.Container
+		want bool
+	}{
+		{
+			name: "has no seccomp profile set",
+			p:    &corev1.PodSpec{},
+			c:    &corev1.Container{},
+			want: false,
+		},
+		{
+			name: "has seccomp profile set to podspec",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{},
+			},
+			want: true,
+		},
+		{
+			name: "has seccomp profile set to container",
+			p: &corev1.PodSpec{
+				SecurityContext: &corev1.PodSecurityContext{},
+			},
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					SeccompProfile: &corev1.SeccompProfile{
+						Type: corev1.SeccompProfileTypeRuntimeDefault,
+					},
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasSeccompProfileTypeRuntimeDefault(tt.p, tt.c)
+			if got != tt.want {
+				t.Errorf("hasSeccompProfileTypeRuntimeDefault() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
