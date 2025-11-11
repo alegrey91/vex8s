@@ -11,6 +11,12 @@ type MitigationRule struct {
 
 func mitigations(cwe string) MitigationRule {
 	switch cwe {
+	// CWE-77: Improper Neutralization of Special Elements used in a Command
+	// ('Command Injection')
+	// https://cwe.mitre.org/data/definitions/77.html
+	// CWE-78: Improper Neutralization of Special Elements used in an OS Command
+	// ('OS Command Injection')
+	// https://cwe.mitre.org/data/definitions/78.html
 	case "CWE-77", "CWE-78":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
@@ -20,6 +26,8 @@ func mitigations(cwe string) MitigationRule {
 					hasAllowPrivilegeEscalation(c)
 			},
 		}
+	// CWE-266: Incorrect Privilege Assignment
+	// https://cwe.mitre.org/data/definitions/266.html
 	case "CWE-266":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
@@ -31,6 +39,8 @@ func mitigations(cwe string) MitigationRule {
 					hasAllowPrivilegeEscalation(c)
 			},
 		}
+	// CWE-276: Incorrect Default Permissions
+	// https://cwe.mitre.org/data/definitions/276.html
 	case "CWE-276":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
@@ -38,6 +48,8 @@ func mitigations(cwe string) MitigationRule {
 				return hasReadOnlyRootFileSystem(c)
 			},
 		}
+	// CWE-732: Incorrect Permission Assignment for Critical Resource
+	// https://cwe.mitre.org/data/definitions/732.html
 	case "CWE-732":
 		return MitigationRule{
 			Verify: func(ps *corev1.PodSpec, c *corev1.Container) bool {
@@ -47,10 +59,13 @@ func mitigations(cwe string) MitigationRule {
 					hasVolumeMountReadOnly(c)
 			},
 		}
+	// CWE-770: Allocation of Resources Without Limits or Throttling
+	// https://cwe.mitre.org/data/definitions/770.html
 	case "CWE-770":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
-				// resources.limits.cpu/memory,
+				// resources.limits.cpu,
+				// resources.limits.memory,
 				// readOnlyRootFilesystem: true
 				return hasResourceLimitCPU(p, c) &&
 					hasResourceLimitMemory(p, c) &&
