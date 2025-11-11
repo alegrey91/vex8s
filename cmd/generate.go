@@ -72,7 +72,7 @@ var generateCmd = &cobra.Command{
 			fmt.Printf("[*] Found %d CVEs\n", len(cves))
 			if showCVEs {
 				for _, cve := range cves {
-					fmt.Printf("[%s]: %s\n", cve.ID, cve.CWEs)
+					fmt.Printf("%s: %s\n", cve.ID, cve.CWEs)
 				}
 			}
 
