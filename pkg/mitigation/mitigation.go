@@ -66,6 +66,7 @@ func mitigations(cwe string) MitigationRule {
 			},
 		}
 	// CWE-269: Improper Privilege Management
+	// https://cwe.mitre.org/data/definitions/269.html
 	case "CWE-269":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
