@@ -396,3 +396,87 @@ func Test_hasSeccompProfileTypeRuntimeDefault(t *testing.T) {
 		})
 	}
 }
+
+func Test_hasCapabilitiesAddContains(t *testing.T) {
+	tests := []struct {
+		name         string
+		c            *corev1.Container
+		capabilities []string
+		want         bool
+	}{
+		{
+			name: "capabilities.add has no input capabilities",
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Add: []corev1.Capability{
+							"CAP_CHOWN",
+							"CAP_SETUID",
+							"CAP_SETGID",
+							"CAP_NET_BIND_SERVICE",
+						},
+					},
+				},
+			},
+			capabilities: []string{
+				"CAP_NET_ADMIN",
+				"CAP_SYS_MODULE",
+			},
+			want: false,
+		},
+		{
+			name: "capabilities.add has input capabilities",
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Add: []corev1.Capability{
+							"CAP_CHOWN",
+							"CAP_SETUID",
+							"CAP_SETGID",
+							"CAP_NET_BIND_SERVICE",
+						},
+					},
+				},
+			},
+			capabilities: []string{
+				"CAP_SETGID",
+			},
+			want: true,
+		},
+		{
+			name: "capabilities.add does not have capabilities set",
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{},
+			},
+			capabilities: []string{
+				"CAP_SETGID",
+			},
+			want: false,
+		},
+		{
+			name: "input capabilities is empty",
+			c: &corev1.Container{
+				SecurityContext: &corev1.SecurityContext{
+					Capabilities: &corev1.Capabilities{
+						Add: []corev1.Capability{
+							"CAP_CHOWN",
+							"CAP_SETUID",
+							"CAP_SETGID",
+							"CAP_NET_BIND_SERVICE",
+						},
+					},
+				},
+			},
+			capabilities: []string{},
+			want:         false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasCapabilitiesAddContains(tt.c, tt.capabilities)
+			if tt.want != got {
+				t.Errorf("hasCapabilitiesAddContains() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

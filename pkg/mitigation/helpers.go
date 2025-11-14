@@ -51,6 +51,26 @@ func hasCapabilitiesDropAll(c *corev1.Container) bool {
 	return hasDropAll
 }
 
+// hasCapabilitiesAddContains checks if the securityContext.Capabilities.Add attribute
+// contains one of the capabilities provided as input.
+// If so, returns true. Otherwise, returns false.
+// This function should be used with the negation:
+// !hasCapabilitiesAddContains(c, []string{"CAP_NET_ADMIN", "CAP_SYS_ADMIN"})
+func hasCapabilitiesAddContains(c *corev1.Container, capabilities []string) bool {
+	if !containerHasSecurityContext(c) ||
+		c.SecurityContext.Capabilities == nil ||
+		c.SecurityContext.Capabilities.Add == nil {
+		return false
+	}
+	for _, cap := range capabilities {
+		capability := corev1.Capability(cap)
+		if slices.Contains(c.SecurityContext.Capabilities.Add, capability) {
+			return true
+		}
+	}
+	return false
+}
+
 func hasRunAsNonRoot(p *corev1.PodSpec, c *corev1.Container) bool {
 	if !containerHasSecurityContext(c) {
 		return false
