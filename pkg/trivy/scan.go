@@ -31,11 +31,11 @@ func Scan(image string) ([]CVE, error) {
 	}
 	defer func() {
 		if err = reportFile.Close(); err != nil {
-			fmt.Printf("failed to close temporary report file", "error", err)
+			fmt.Printf("failed to close temporary report file: %v\n", err)
 		}
 
 		if err = os.Remove(reportFile.Name()); err != nil {
-			fmt.Printf("failed to remove temporary repoort file", "error", err)
+			fmt.Printf("failed to remove temporary repoort file: %v\n", err)
 		}
 	}()
 
