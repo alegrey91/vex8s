@@ -24,7 +24,7 @@ func ConvertReport(scanResult ScanResult) ([]CVE, error) {
 	}
 }
 
-// convertGrypeReport converts Grype report to CVE slice
+// convertGrypeReport converts grype report to CVE slice
 func convertGrypeReport(report GrypeReport) []CVE {
 	var cves []CVE
 	for _, vuln := range report.Document.Matches {
@@ -42,7 +42,7 @@ func convertGrypeReport(report GrypeReport) []CVE {
 	return cves
 }
 
-// convertTrivyReport converts Trivy report to CVE slice
+// convertTrivyReport converts trivy report to CVE slice
 func convertTrivyReport(report TrivyReport) []CVE {
 	var cves []CVE
 	for _, res := range report.Report.Results {
