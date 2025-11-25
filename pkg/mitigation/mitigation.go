@@ -1,7 +1,7 @@
 package mitigation
 
 import (
-	"github.com/alegrey91/vex8s/pkg/trivy"
+	"github.com/alegrey91/vex8s/pkg/scanner"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -128,7 +128,7 @@ func mitigations(cwe string) MitigationRule {
 	}
 }
 
-func IsCVEMitigated(cve trivy.CVE, spec *corev1.PodSpec, ct *corev1.Container) bool {
+func IsCVEMitigated(cve scanner.CVE, spec *corev1.PodSpec, ct *corev1.Container) bool {
 	if len(cve.CWEs) == 0 {
 		return false
 	}

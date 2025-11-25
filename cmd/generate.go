@@ -11,14 +11,18 @@ import (
 
 	"github.com/alegrey91/vex8s/pkg/k8s"
 	"github.com/alegrey91/vex8s/pkg/mitigation"
-	"github.com/alegrey91/vex8s/pkg/trivy"
+	"github.com/alegrey91/vex8s/pkg/scanner"
+	"github.com/alegrey91/vex8s/pkg/scanner/trivy"
 	"github.com/alegrey91/vex8s/pkg/vex"
 	"github.com/briandowns/spinner"
 	"github.com/spf13/cobra"
+
+	trivyTypes "github.com/aquasecurity/trivy/pkg/types"
 )
 
 var (
 	manifestPath       string
+	vulnReportPath     string
 	outputPath         string
 	showCVEs           bool
 	showSecContext     bool
@@ -49,7 +53,7 @@ var generateCmd = &cobra.Command{
 		}
 
 		fmt.Printf("[*] Processing\n")
-		var totalMitigated []trivy.CVE
+		var totalMitigated []scanner.CVE
 
 		if showSecContext {
 			fmt.Printf("[+] spec.SecurityContext:\n")
@@ -70,16 +74,27 @@ var generateCmd = &cobra.Command{
 				fmt.Println(string(ctSC))
 			}
 
-			var cves []trivy.CVE
-			fmt.Println("[*] Scanning for CVEs...")
-			s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-			s.Suffix = " Scanning image"
-			s.Start()
-			cves, err = trivy.Scan(image)
-			s.Stop()
-			if err != nil {
-				return fmt.Errorf("[!] Error: %w", err)
+			var report trivyTypes.Report
+			var cves []scanner.CVE
+			if vulnReportPath != "" {
+				fmt.Println("[*] Reading from report...")
+				report, err = trivy.ReadFromReport(vulnReportPath)
+				if err != nil {
+					return fmt.Errorf("[!] Error: %w", err)
+				}
+			} else {
+				fmt.Println("[*] Scanning for CVEs...")
+				s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+				s.Suffix = " Scanning image"
+				s.Start()
+				report, err = trivy.Scan(image)
+				if err != nil {
+					return fmt.Errorf("[!] Error: %w", err)
+				}
+				s.Stop()
 			}
+			cves = trivy.ConvertReport(report)
+
 			fmt.Printf("[*] Found %d CVEs\n", len(cves))
 			if showCVEs {
 				for _, cve := range cves {
@@ -87,7 +102,7 @@ var generateCmd = &cobra.Command{
 				}
 			}
 
-			var mitigated []trivy.CVE
+			var mitigated []scanner.CVE
 			for _, cve := range cves {
 				if mitigation.IsCVEMitigated(cve, podSpec, &container) {
 					mitigated = append(mitigated, cve)
@@ -138,6 +153,7 @@ func init() {
 
 	generateCmd.Flags().StringVarP(&manifestPath, "manifest", "m", "", "path to Kubernetes manifest YAML")
 	generateCmd.MarkFlagRequired("manifest")
+	generateCmd.Flags().StringVarP(&vulnReportPath, "report", "r", "", "path to vulnerability report")
 	generateCmd.Flags().StringVarP(&outputPath, "output", "o", "", "output VEX file path")
 
 	// Show flags
