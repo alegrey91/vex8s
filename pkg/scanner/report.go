@@ -52,7 +52,7 @@ func ReadFromReport(reportFile string) (ScanResult, error) {
 		// grype report
 		var grypeReport GrypeReport
 		if err := json.Unmarshal(data, &grypeReport.Document); err != nil {
-			return ScanResult{}, fmt.Errorf("failed to unmarshal Grype report: %w", err)
+			return ScanResult{}, fmt.Errorf("failed to unmarshal grype report: %w", err)
 		}
 		result.Engine = Grype
 		result.Report = grypeReport
@@ -60,7 +60,7 @@ func ReadFromReport(reportFile string) (ScanResult, error) {
 		// trivy report
 		var trivyReport TrivyReport
 		if err := json.Unmarshal(data, &trivyReport.Report); err != nil {
-			return ScanResult{}, fmt.Errorf("failed to unmarshal Trivy report: %w", err)
+			return ScanResult{}, fmt.Errorf("failed to unmarshal trivy report: %w", err)
 		}
 		result.Engine = Trivy
 		result.Report = trivyReport

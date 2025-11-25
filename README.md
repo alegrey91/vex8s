@@ -36,30 +36,30 @@ make build
 ## Example
 
 ```
-# scan the image without passing a VEX file.
-trivy image --skip-version-check nginx:1.21.0
+# generate vulnerability report.
+trivy image --format json --output nginx.trivy.json nginx:1.21.0
 
-# examples/nginx.yaml uses the nginx:1.21.0 image.
-vex8s generate --manifest examples/nginx.yaml --output nginx.vex.json
-
-# nginx.vex.json will let trivy suppress the CVEs listed inside.
-trivy image --skip-version-check --vex=nginx.vex.json --show-suppressed nginx:1.21.0
-```
-
-Or, if you just want to process the vulnerability report with `vex8s`:
-
-```
-# generate the sbom.
-trivy image --format spdx-json --output image.spdx.json nginx:1.21.0
-
-# scan the sbom without passing a VEX file.
-trivy sbom --format json --output nginx.trivy.json image.spdx.json
-
-# process the vulnerability report.
+# generate VEX document by processing vulnerability report.
 vex8s generate --manifest examples/nginx.yaml --report nginx.trivy.json --output nginx.vex.json
 
-# check the result with VEX file.
-trivy image --skip-version-check --vex=nginx.vex.json --show-suppressed nginx:1.21.0
+# scan again with VEX document to suppress vulnerabilities.
+trivy image --vex=nginx.vex.json --show-suppressed nginx:1.21.0
+```
+
+The same can be applied with `grype`:
+
+```
+# generate sbom report.
+grype --output cyclonedx-json --file nginx.grype.json nginx:1.21.0
+
+# generate vulnerability report.
+grype sbom:./nginx.grype.json --output json --file nginx.grype-vr.json
+
+# generate VEX document by processing vulnerability report.
+vex8s generate --manifest examples/nginx.yaml --report nginx.grype-vr.json --output nginx.vex.json
+
+# scan again with VEX document to suppress vulnerabilities.
+grype sbom:./nginx.grype.json --output table --vex nginx.vex.json --show-suppressed
 ```
 
 ## References

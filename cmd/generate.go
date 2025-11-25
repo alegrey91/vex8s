@@ -7,17 +7,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/alegrey91/vex8s/pkg/k8s"
 	"github.com/alegrey91/vex8s/pkg/mitigation"
 	"github.com/alegrey91/vex8s/pkg/scanner"
 	"github.com/alegrey91/vex8s/pkg/vex"
+	"github.com/briandowns/spinner"
 	"github.com/spf13/cobra"
 )
 
 var (
 	manifestPath       string
 	vulnReportPath     string
+	scanEngine         string
 	outputPath         string
 	showCVEs           bool
 	showSecContext     bool
@@ -40,6 +43,12 @@ const (
 var generateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generates VEX documents",
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if vulnReportPath == "" && scanEngine == "" {
+			return fmt.Errorf("[!] Error: at least one flag between -r or -s must be provided")
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("[*] Parsing manifest: %s\n", manifestPath)
 		podSpec, err := k8s.ParseManifestPodSpec(manifestPath)
@@ -71,16 +80,35 @@ var generateCmd = &cobra.Command{
 
 			var report scanner.ScanResult
 			var cves []scanner.CVE
+			// vex8s using report mode
 			if vulnReportPath != "" {
 				fmt.Println("[*] Reading from report...")
 				report, err = scanner.ReadFromReport(vulnReportPath)
 				if err != nil {
-					return fmt.Errorf("[!] Error: %w", err)
+					return fmt.Errorf("[!] Error: failed to read from report: %w", err)
 				}
+			}
+			// vex8s using scanning mode
+			if scanEngine != "" {
+				fmt.Println("[*] Scanning with engine...")
+				s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
+				s.Suffix = " Scanning image"
+				s.Start()
+				var vulnScanner scanner.Scanner
+				switch scanEngine {
+				case "trivy":
+					vulnScanner = &scanner.TrivyScanner{}
+				case "grype":
+					vulnScanner = &scanner.GrypeScanner{}
+				default:
+					return fmt.Errorf("[!] Error: invalid scanning tool selected")
+				}
+				report, err = vulnScanner.Scan(image)
+				s.Stop()
 			}
 			cves, err = scanner.ConvertReport(report)
 			if err != nil {
-				return fmt.Errorf("[!] Error: %w", err)
+				return fmt.Errorf("[!] Error: converting report: %w", err)
 			}
 
 			fmt.Printf("[*] Found %d CVEs\n", len(cves))
@@ -142,6 +170,8 @@ func init() {
 	generateCmd.Flags().StringVarP(&manifestPath, "manifest", "m", "", "path to Kubernetes manifest YAML")
 	generateCmd.MarkFlagRequired("manifest")
 	generateCmd.Flags().StringVarP(&vulnReportPath, "report", "r", "", "path to vulnerability report")
+	generateCmd.Flags().StringVarP(&scanEngine, "scan.engine", "s", "", "tool to scan for images [trivy, grype]")
+	generateCmd.MarkFlagsMutuallyExclusive("report", "scan.engine")
 	generateCmd.Flags().StringVarP(&outputPath, "output", "o", "", "output VEX file path")
 
 	// Show flags
