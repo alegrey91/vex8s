@@ -7,17 +7,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/alegrey91/vex8s/pkg/k8s"
 	"github.com/alegrey91/vex8s/pkg/mitigation"
 	"github.com/alegrey91/vex8s/pkg/scanner"
-	"github.com/alegrey91/vex8s/pkg/scanner/trivy"
 	"github.com/alegrey91/vex8s/pkg/vex"
-	"github.com/briandowns/spinner"
 	"github.com/spf13/cobra"
-
-	trivyTypes "github.com/aquasecurity/trivy/pkg/types"
 )
 
 var (
@@ -74,26 +69,19 @@ var generateCmd = &cobra.Command{
 				fmt.Println(string(ctSC))
 			}
 
-			var report trivyTypes.Report
+			var report scanner.ScanResult
 			var cves []scanner.CVE
 			if vulnReportPath != "" {
 				fmt.Println("[*] Reading from report...")
-				report, err = trivy.ReadFromReport(vulnReportPath)
+				report, err = scanner.ReadFromReport(vulnReportPath)
 				if err != nil {
 					return fmt.Errorf("[!] Error: %w", err)
 				}
-			} else {
-				fmt.Println("[*] Scanning for CVEs...")
-				s := spinner.New(spinner.CharSets[14], 100*time.Millisecond)
-				s.Suffix = " Scanning image"
-				s.Start()
-				report, err = trivy.Scan(image)
-				if err != nil {
-					return fmt.Errorf("[!] Error: %w", err)
-				}
-				s.Stop()
 			}
-			cves = trivy.ConvertReport(report)
+			cves, err = scanner.ConvertReport(report)
+			if err != nil {
+				return fmt.Errorf("[!] Error: %w", err)
+			}
 
 			fmt.Printf("[*] Found %d CVEs\n", len(cves))
 			if showCVEs {
