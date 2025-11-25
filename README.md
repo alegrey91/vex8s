@@ -40,9 +40,25 @@ make build
 trivy image --skip-version-check nginx:1.21.0
 
 # examples/nginx.yaml uses the nginx:1.21.0 image.
-vex8s generate --manifest=examples/nginx.yaml --output nginx.vex.json
+vex8s generate --manifest examples/nginx.yaml --output nginx.vex.json
 
 # nginx.vex.json will let trivy suppress the CVEs listed inside.
+trivy image --skip-version-check --vex=nginx.vex.json --show-suppressed nginx:1.21.0
+```
+
+Or, if you just want to process the vulnerability report with `vex8s`:
+
+```
+# generate the sbom.
+trivy image --format spdx-json --output image.spdx.json nginx:1.21.0
+
+# scan the sbom without passing a VEX file.
+trivy sbom --format json --output nginx.trivy.json image.spdx.json
+
+# process the vulnerability report.
+vex8s generate --manifest examples/nginx.yaml --report nginx.trivy.json --output nginx.vex.json
+
+# check the result with VEX file.
 trivy image --skip-version-check --vex=nginx.vex.json --show-suppressed nginx:1.21.0
 ```
 
