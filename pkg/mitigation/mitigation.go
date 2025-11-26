@@ -58,7 +58,7 @@ func mitigations(cwe string) MitigationRule {
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
 				// privileged: false
-				// capabilities.drop
+				// capabilities.drop: ["ALL"]
 				// allowPrivilegeEscalation: false
 				return hasPrivileged(c) &&
 					hasCapabilitiesDropAll(c) &&
@@ -116,6 +116,7 @@ func mitigations(cwe string) MitigationRule {
 	case "CWE-835":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
+				// resources.limits.cpu
 				return hasResourceLimitCPU(p, c)
 			},
 		}

@@ -33,7 +33,17 @@ Or you can build it manually:
 make build
 ```
 
-## Example
+## Usage
+
+`vex8s` currently supports 2 ways to generate VEX documents:
+
+* **passive-mode**: passing an already generated vulnerability report created by `trivy` or `grype`.
+
+* **active-mode**: actively scanning the images using `trivy` or `grype` engines and then gereating the document based on the results.
+
+### Passive mode (recommended)
+
+Using `trivy`:
 
 ```
 # generate vulnerability report.
@@ -43,10 +53,10 @@ trivy image --format json --output nginx.trivy.json nginx:1.21.0
 vex8s generate --manifest examples/nginx.yaml --report nginx.trivy.json --output nginx.vex.json
 
 # scan again with VEX document to suppress vulnerabilities.
-trivy image --vex=nginx.vex.json --show-suppressed nginx:1.21.0
+trivy image --vex nginx.vex.json --show-suppressed nginx:1.21.0
 ```
 
-The same can be applied with `grype`:
+The same can be applied using `grype`:
 
 ```
 # generate sbom report.
@@ -58,7 +68,32 @@ grype sbom:./nginx.grype.json --output json --file nginx.grype-vr.json
 # generate VEX document by processing vulnerability report.
 vex8s generate --manifest examples/nginx.yaml --report nginx.grype-vr.json --output nginx.vex.json
 
+# scan sbom with VEX document to suppress vulnerabilities.
+grype sbom:./nginx.grype.json --output table --vex nginx.vex.json --show-suppressed
+```
+
+### Active mode
+
+Using `trivy`:
+
+```
+# scan the image and automatically generate VEX document.
+vex8s generate --manifest examples/nginx.yaml --scan.engine trivy --output nginx.vex.json
+
 # scan again with VEX document to suppress vulnerabilities.
+trivy image --vex nginx.vex.json --show-suppressed nginx:1.21.0
+```
+
+The same can be applied using `grype`:
+
+```
+# generate sbom report.
+grype --output cyclonedx-json --file nginx.grype.json nginx:1.21.0
+
+# scan the image and automatically generate VEX document.
+vex8s generate --manifest examples/nginx.yaml --scan.engine grype --output nginx.vex.json
+
+# scan sbom with VEX document to suppress vulnerabilities.
 grype sbom:./nginx.grype.json --output table --vex nginx.vex.json --show-suppressed
 ```
 
