@@ -3,7 +3,7 @@ package vex
 import (
 	"fmt"
 
-	"github.com/alegrey91/vex8s/pkg/scanner"
+	"github.com/alegrey91/vex8s/pkg/mitigation"
 	govex "github.com/openvex/go-vex/pkg/vex"
 	"github.com/package-url/packageurl-go"
 )
@@ -15,7 +15,7 @@ type VEXInfo struct {
 }
 
 // GenerateVEX generates a VEX document
-func GenerateVEX(mitigated []scanner.CVE, info VEXInfo) (govex.VEX, error) {
+func GenerateVEX(mitigated []mitigation.CVE, info VEXInfo) (govex.VEX, error) {
 	doc := govex.New()
 
 	doc.Author = info.Author

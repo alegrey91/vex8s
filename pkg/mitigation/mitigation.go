@@ -1,9 +1,15 @@
 package mitigation
 
 import (
-	"github.com/alegrey91/vex8s/pkg/scanner"
 	corev1 "k8s.io/api/core/v1"
 )
+
+// CVE represents a vulnerability
+type CVE struct {
+	ID   string   `json:"id"`
+	PURL string   `json:"purl"`
+	CWEs []string `json:"cwes"`
+}
 
 type MitigationRule struct {
 	Verify func(*corev1.PodSpec, *corev1.Container) bool
@@ -129,7 +135,7 @@ func mitigations(cwe string) MitigationRule {
 	}
 }
 
-func IsCVEMitigated(cve scanner.CVE, spec *corev1.PodSpec, ct *corev1.Container) bool {
+func IsCVEMitigated(cve CVE, spec *corev1.PodSpec, ct *corev1.Container) bool {
 	if len(cve.CWEs) == 0 {
 		return false
 	}

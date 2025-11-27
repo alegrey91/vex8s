@@ -2,17 +2,12 @@ package scanner
 
 import (
 	"fmt"
+
+	"github.com/alegrey91/vex8s/pkg/mitigation"
 )
 
-// CVE represents a vulnerability
-type CVE struct {
-	ID   string   `json:"id"`
-	PURL string   `json:"purl"`
-	CWEs []string `json:"cwes"`
-}
-
 // ConvertReport converts a ScanResult to a normalized CVE slice
-func ConvertReport(scanResult ScanResult) ([]CVE, error) {
+func ConvertReport(scanResult ScanResult) ([]mitigation.CVE, error) {
 	// Use type switch to handle different report types
 	switch report := scanResult.Report.(type) {
 	case GrypeReport:
@@ -25,14 +20,14 @@ func ConvertReport(scanResult ScanResult) ([]CVE, error) {
 }
 
 // convertGrypeReport converts grype report to CVE slice
-func convertGrypeReport(report GrypeReport) []CVE {
-	var cves []CVE
+func convertGrypeReport(report GrypeReport) []mitigation.CVE {
+	var cves []mitigation.CVE
 	for _, vuln := range report.Document.Matches {
 		var cweList []string
 		for _, cwe := range vuln.Vulnerability.CWEs {
 			cweList = append(cweList, cwe.CWE)
 		}
-		cves = append(cves, CVE{
+		cves = append(cves, mitigation.CVE{
 			ID:   vuln.Vulnerability.ID,
 			PURL: vuln.Artifact.PURL,
 			CWEs: cweList,
@@ -43,11 +38,11 @@ func convertGrypeReport(report GrypeReport) []CVE {
 }
 
 // convertTrivyReport converts trivy report to CVE slice
-func convertTrivyReport(report TrivyReport) []CVE {
-	var cves []CVE
+func convertTrivyReport(report TrivyReport) []mitigation.CVE {
+	var cves []mitigation.CVE
 	for _, res := range report.Report.Results {
 		for _, vuln := range res.Vulnerabilities {
-			cves = append(cves, CVE{
+			cves = append(cves, mitigation.CVE{
 				ID:   vuln.VulnerabilityID,
 				PURL: vuln.PkgIdentifier.PURL.String(),
 				CWEs: vuln.CweIDs,
