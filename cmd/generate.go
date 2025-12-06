@@ -175,8 +175,8 @@ func init() {
 	generateCmd.Flags().StringVarP(&outputPath, "output", "o", "", "output VEX file path")
 
 	// Show flags
-	generateCmd.Flags().BoolVar(&showCVEs, "show.cves", false, "show CVEs found")
-	generateCmd.Flags().BoolVar(&showSecContext, "show.sec", false, "show SecurityContext found")
+	generateCmd.Flags().BoolVar(&showCVEs, "show.cve", false, "show CVE list")
+	generateCmd.Flags().BoolVar(&showSecContext, "show.securitycontext", false, "show manifest SecurityContext")
 
 	// VEX flags
 	generateCmd.Flags().StringVar(&vexAuthor, "vex.author", "Unknown Author", "set VEX author")
