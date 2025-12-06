@@ -1,0 +1,40 @@
+# this testscript test the 'generate' command
+[!exec:vex8s] stop
+
+exec vex8s generate --help
+stdout 'Usage:'
+
+# generate VEX document parsing trivy report.
+exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json
+stdout '"tooling": "vex8s"'
+
+# generate VEX document parsing grype report.
+exec vex8s generate --manifest nginx.yaml --report nginx.grype.json
+stdout '"tooling": "vex8s"'
+
+# show CVE list before generating VEX document.
+exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --show.cve
+stdout -count=1 'CVE-2022-3627: \[CWE-787\]'
+
+# show SecurityContext used by provided manifest before generating VEX document.
+exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --show.securitycontext
+stdout '\[\+\] spec.SecurityContext:'
+stdout '\[\+\] container.SecurityContext:'
+stdout '  "readOnlyRootFilesystem": true,'
+
+# suppress disclaimer generating VEX document.
+exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --suppress.disclaimer
+! stdout '\[\!\] WARNING:'
+
+# generate VEX document by setting author.
+exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --vex.author Me
+stdout '"author": "Me",'
+
+# generate VEX document by setting role.
+exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --vex.role 'SWE'
+stdout '"role": "SWE",'
+
+# generate VEX document and save into a file.
+exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --output nginx.vex.json
+exists nginx.vex.json
+grep '"tooling": "vex8s"' nginx.vex.json

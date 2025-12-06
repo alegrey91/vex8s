@@ -17,11 +17,27 @@ build:
 	chmod +x $(BINARY_PATH)
 	@echo "✓ Binary built: $(BINARY_PATH)"
 
+## test: Run all tests
+.PHONY: test
+test: test-unit test-integration
+
 ## test: Test unit tests
-test:
+test-unit:
 	@echo "Testing $(BINARY_NAME)..."
 	$(BUILD_VARS) go test -v ./...
 	@echo "✓ Tests ran"
+
+## test: Test integration tests
+test-integration: install
+	@echo "Testing $(BINARY_NAME)..."
+	$(BUILD_VARS) go test -tags=integration ./test/ -v
+	@echo "✓ Tests ran"
+
+## install vex8s locally
+install: build
+	@echo "Installing vex8s locally"
+	cp ./bin/vex8s $(HOME)/go/bin/
+	@echo "✓ Installation succeded"
 
 ## clean: Remove build artifacts
 clean:
