@@ -15,6 +15,7 @@ require (
 	github.com/anchore/grype v0.104.1
 	github.com/aquasecurity/trivy v0.67.2
 	github.com/rogpeppe/go-internal v1.14.1
+	github.com/yalue/onnxruntime_go v1.25.0
 )
 
 require (

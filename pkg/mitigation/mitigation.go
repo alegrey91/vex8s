@@ -1,6 +1,9 @@
 package mitigation
 
 import (
+	"fmt"
+
+	"github.com/alegrey91/vex8s/pkg/inference"
 	corev1 "k8s.io/api/core/v1"
 )
 
@@ -136,14 +139,82 @@ func mitigations(cwe string) MitigationRule {
 	}
 }
 
-func IsCVEMitigated(cve CVE, spec *corev1.PodSpec, ct *corev1.Container) bool {
+func classMitigations(label string) MitigationRule {
+	switch label {
+	case "arbitrary_file_write_access":
+		return MitigationRule{
+			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
+				// privileged: false
+				// allowPrivilegeEscalation: false
+				return hasPrivileged(c) &&
+					hasAllowPrivilegeEscalation(c)
+			},
+		}
+	case "system_privilege_escalation":
+		return MitigationRule{
+			Verify: func(ps *corev1.PodSpec, c *corev1.Container) bool {
+				// readOnlyRootFilesystem: true
+				// volumeMounts[].readOnly: true
+				return hasReadOnlyRootFileSystem(c) &&
+					hasVolumeMountReadOnly(c)
+			},
+		}
+	case "resource_exhaustion":
+		return MitigationRule{
+			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
+				// resources.limits.cpu
+				// resources.limits.memory
+				// readOnlyRootFilesystem: true
+				return hasResourceLimitCPU(p, c) &&
+					hasResourceLimitMemory(p, c) &&
+					hasReadOnlyRootFileSystem(c)
+			},
+		}
+	case "other":
+		return MitigationRule{
+			Verify: func(ps *corev1.PodSpec, c *corev1.Container) bool {
+				return false
+			},
+		}
+	default:
+		return MitigationRule{
+			Verify: func(ps *corev1.PodSpec, c *corev1.Container) bool {
+				return false
+			},
+		}
+	}
+}
+
+func IsCVEMitigated(cve CVE, spec *corev1.PodSpec, ct *corev1.Container, m *inference.Model) bool {
 	if len(cve.CWEs) == 0 {
 		return false
 	}
+	mitigatedByCWERules := true
+	fmt.Println("CVE CWEs detected:", cve.CWEs)
 	for _, cwe := range cve.CWEs {
 		if !mitigations(cwe).Verify(spec, ct) {
-			return false
+			fmt.Printf("cwe %s was not mitigated\n", cwe)
+			mitigatedByCWERules = false
 		}
 	}
-	return true
+	if mitigatedByCWERules {
+		fmt.Printf("cwes for cve %s have been mitigated\n", cve.ID)
+		return true
+	}
+
+	fmt.Println("inferring CVE labels")
+	mitigatedByClassRules := true
+	labels := m.InferLabels(cve.Description)
+	fmt.Println("CVE labels detected:", labels)
+	for _, label := range labels {
+		if !classMitigations(label).Verify(spec, ct) {
+			fmt.Printf("label %s was not mitigated\n", label)
+			mitigatedByClassRules = false
+		}
+	}
+	if mitigatedByClassRules {
+		fmt.Printf("labels for cve %s have been mitigated\n", cve.ID)
+		return true
+	}
+	return false
 }
