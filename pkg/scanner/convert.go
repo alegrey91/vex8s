@@ -43,9 +43,10 @@ func convertTrivyReport(report TrivyReport) []mitigation.CVE {
 	for _, res := range report.Report.Results {
 		for _, vuln := range res.Vulnerabilities {
 			cves = append(cves, mitigation.CVE{
-				ID:   vuln.VulnerabilityID,
-				PURL: vuln.PkgIdentifier.PURL.String(),
-				CWEs: vuln.CweIDs,
+				ID:          vuln.VulnerabilityID,
+				Description: vuln.Description,
+				PURL:        vuln.PkgIdentifier.PURL.String(),
+				CWEs:        vuln.CweIDs,
 			})
 		}
 	}
