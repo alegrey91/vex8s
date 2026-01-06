@@ -6,9 +6,10 @@ import (
 
 // CVE represents a vulnerability
 type CVE struct {
-	ID   string   `json:"id"`
-	PURL string   `json:"purl"`
-	CWEs []string `json:"cwes"`
+	ID          string   `json:"id"`
+	Description string   `json:"description"`
+	PURL        string   `json:"purl"`
+	CWEs        []string `json:"cwes"`
 }
 
 type MitigationRule struct {
