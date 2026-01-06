@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/alegrey91/vex8s/pkg/inference"
 	"github.com/alegrey91/vex8s/pkg/k8s"
 	"github.com/alegrey91/vex8s/pkg/mitigation"
 	"github.com/alegrey91/vex8s/pkg/scanner"
@@ -118,9 +119,15 @@ var generateCmd = &cobra.Command{
 				}
 			}
 
+			model := inference.NewModel()
+			if err := model.Setup(); err != nil {
+				return fmt.Errorf("[!] Error: setting up model: %w", err)
+			}
+			defer model.Destroy()
+
 			var mitigated []mitigation.CVE
 			for _, cve := range cves {
-				if mitigation.IsCVEMitigated(cve, podSpec, &container) {
+				if mitigation.IsCVEMitigated(cve, podSpec, &container, model) {
 					mitigated = append(mitigated, cve)
 				}
 			}
