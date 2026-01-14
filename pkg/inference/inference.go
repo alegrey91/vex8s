@@ -12,9 +12,12 @@ import (
 
 var (
 	LABELS = []string{
-		"arbitrary_file_write_access",
-		"system_privilege_escalation",
+		"arbitrary_file_write",
+		"system_privileges_escalation",
 		"resource_exhaustion",
+		"code_injection",
+		"arbitrary_file_read",
+		"application_privilege_escalation",
 	}
 )
 
@@ -59,7 +62,7 @@ func (m *Model) Destroy() {
 	os.Remove(path.Join("/tmp", "libonnxruntime.so"))
 }
 
-func (m *Model) InferLabels(inputText string) []string {
+func (m *Model) Predict(inputText string) []string {
 	inputShape := ort.NewShape(1, 1)
 	inputTensor, err := ort.NewStringTensor(inputShape)
 	if err != nil {
