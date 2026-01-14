@@ -57,8 +57,10 @@ spec:
           readOnly: true
         - name: tmp
           mountPath: /tmp
+          readOnly: true
         - name: pip-cache
           mountPath: /.cache
+          readOnly: true
         
         resources:
           requests:

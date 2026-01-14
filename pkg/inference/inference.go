@@ -21,7 +21,7 @@ var (
 	}
 )
 
-//go:embed nn/cve_multilabel_classifier.onnx
+//go:embed nn/vex8s_cve_classifier.onnx
 var onnxModel []byte
 
 //go:embed nn/libonnxruntime.so

@@ -19,57 +19,8 @@ type MitigationRule struct {
 	Verify func(*corev1.PodSpec, *corev1.Container) bool
 }
 
-func cweMitigations(cwe string) MitigationRule {
+func cweToClass(cwe string) MitigationRule {
 	switch cwe {
-	/*
-		// CWE-119: Improper Restriction of Operations within the Bounds of a Memory Buffer
-		// https://cwe.mitre.org/data/definitions/835.html
-		// CWE-787: Out-of-bounds Write
-		// https://cwe.mitre.org/data/definitions/787.html
-		case "CWE-119", "CWE-787":
-			return MitigationRule{
-				Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
-					// seccompProfile.type: RuntimeDefault
-					return hasSeccompProfileTypeRuntimeDefault(p, c)
-				},
-			}
-	*/
-	// CWE-77: Improper Neutralization of Special Elements used in a Command
-	// ('Command Injection')
-	// https://cwe.mitre.org/data/definitions/77.html
-	// CWE-78: Improper Neutralization of Special Elements used in an OS Command
-	// ('OS Command Injection')
-	// https://cwe.mitre.org/data/definitions/78.html
-	// CWE-250: Execution with Unnecessary Privileges
-	// https://cwe.mitre.org/data/definitions/250.html
-	// CWE-266: Incorrect Privilege Assignment
-	// https://cwe.mitre.org/data/definitions/266.html
-	// CWE-269: Improper Privilege Management
-	// https://cwe.mitre.org/data/definitions/269.html
-	case "CWE-77", "CWE-78", "CWE-250", "CWE-266", "CWE-269":
-		return MitigationRule{
-			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
-				// privileged: false
-				// allowPrivilegeEscalation: false
-				// runAsNonRoot: true || runAsUser: <UID> >= 1000
-				return hasPrivileged(c) &&
-					hasAllowPrivilegeEscalation(c) &&
-					(hasRunAsNonRoot(p, c) || hasRunAsUser(p, c))
-			},
-		}
-	// CWE-400: Uncontrolled Resource Consumption
-	// https://cwe.mitre.org/data/definitions/400.html
-	// CWE-770: Allocation of Resources Without Limits or Throttling
-	// https://cwe.mitre.org/data/definitions/770.html
-	case "CWE-400", "CWE-770":
-		return MitigationRule{
-			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
-				// resources.limits.cpu
-				// resources.limits.memory
-				return hasResourceLimitCPU(p, c) &&
-					hasResourceLimitMemory(p, c)
-			},
-		}
 	// CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
 	// https://cwe.mitre.org/data/definitions/22.html
 	// CWE-23: Relative Path Traversal
@@ -90,9 +41,36 @@ func cweMitigations(cwe string) MitigationRule {
 	// https://cwe.mitre.org/data/definitions/732.html
 	case "CWE-22", "CWE-23", "CWE-36", "CWE-276", "CWE-377", "CWE-378", "CWE-379", "CWE-434", "CWE-732":
 		return MitigationRule{
-			Verify: func(ps *corev1.PodSpec, c *corev1.Container) bool {
-				return hasReadOnlyRootFileSystem(c) &&
-					hasVolumeMountReadOnly(c)
+			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
+				return true
+			},
+		}
+	// CWE-77: Improper Neutralization of Special Elements used in a Command
+	// ('Command Injection')
+	// https://cwe.mitre.org/data/definitions/77.html
+	// CWE-78: Improper Neutralization of Special Elements used in an OS Command
+	// ('OS Command Injection')
+	// https://cwe.mitre.org/data/definitions/78.html
+	// CWE-250: Execution with Unnecessary Privileges
+	// https://cwe.mitre.org/data/definitions/250.html
+	// CWE-266: Incorrect Privilege Assignment
+	// https://cwe.mitre.org/data/definitions/266.html
+	// CWE-269: Improper Privilege Management
+	// https://cwe.mitre.org/data/definitions/269.html
+	case "CWE-77", "CWE-78", "CWE-250", "CWE-266", "CWE-269":
+		return MitigationRule{
+			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
+				return true
+			},
+		}
+	// CWE-400: Uncontrolled Resource Consumption
+	// https://cwe.mitre.org/data/definitions/400.html
+	// CWE-770: Allocation of Resources Without Limits or Throttling
+	// https://cwe.mitre.org/data/definitions/770.html
+	case "CWE-400", "CWE-770":
+		return MitigationRule{
+			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
+				return true
 			},
 		}
 	default:
@@ -120,6 +98,7 @@ func classMitigations(label string) MitigationRule {
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
 				// privileged: false
 				// allowPrivilegeEscalation: false
+				// runAsNonRoot: true || runAsUser: <non-zero>
 				return hasPrivileged(c) &&
 					hasAllowPrivilegeEscalation(c) &&
 					(hasRunAsNonRoot(p, c) || hasRunAsUser(p, c))
@@ -178,21 +157,26 @@ func IsCVEMitigated(cve CVE, spec *corev1.PodSpec, ct *corev1.Container, m *infe
 		return false
 	}
 
-	mitigatedByCWERules := false
-	mitigatedByClassRules := false
-	for _, cwe := range cve.CWEs {
-		if cweMitigations(cwe).Verify(spec, ct) {
-			mitigatedByCWERules = true
-		}
+	labels := m.Predict(cve.Description)
+	fmt.Println(cve.ID, "labels:", labels)
 
-		labels := m.Predict(cve.Description)
-		for _, label := range labels {
-			if classMitigations(label).Verify(spec, ct) {
-				mitigatedByClassRules = true
-			}
+	mitigateByLabel := false
+	// All predicted labels must be mitigated
+	for _, label := range labels {
+		if classMitigations(label).Verify(spec, ct) {
+			mitigateByLabel = true
 		}
 	}
-	if mitigatedByCWERules && mitigatedByClassRules {
+
+	mitigateByCWE := false
+	// All CWEs must be mitigated
+	for _, cwe := range cve.CWEs {
+		if cweToClass(cwe).Verify(spec, ct) {
+			mitigateByCWE = true
+		}
+	}
+
+	if mitigateByLabel && mitigateByCWE {
 		fmt.Printf("%s => %s have been mitigated\n", cve.ID, cve.CWEs)
 		return true
 	}
