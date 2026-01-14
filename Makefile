@@ -68,18 +68,18 @@ lint:
 ## download-model: Download the latest model artifact if not present
 .PHONY: download-model
 download-model:
-	@if [ -f pkg/inference/nn/cve_multilabel_classifier.onnx ]; then \
-		echo "Model artifact already present at pkg/inference/nn/cve_multilabel_classifier.onnx"; \
+	@if [ -f pkg/inference/nn/vex8s_cve_classifier.onnx ]; then \
+		echo "Model artifact already present at pkg/inference/nn/vex8s_cve_classifier.onnx"; \
 	else \
 		echo "Model artifact not found. Downloading latest from GitHub..."; \
-		LATEST_URL=$$(curl -s https://api.github.com/repos/alegrey91/vex8s-model/releases/latest | grep browser_download_url | grep cve_multilabel_classifier.onnx | cut -d '"' -f 4); \
+		LATEST_URL=$$(curl -s https://api.github.com/repos/alegrey91/vex8s-model/releases/latest | grep browser_download_url | grep vex8s_cve_classifier.onnx | cut -d '"' -f 4); \
 		if [ -z "$$LATEST_URL" ]; then \
 			echo "Could not find model artifact in latest release."; exit 1; \
 		fi; \
 		mkdir -p pkg/inference/nn/; \
-		curl -L -o pkg/inference/nn/cve_multilabel_classifier.onnx "$$LATEST_URL"; \
+		curl -L -o pkg/inference/nn/vex8s_cve_classifier.onnx "$$LATEST_URL"; \
 		if [ $$? -eq 0 ]; then \
-			echo "Model downloaded to pkg/inference/nn/cve_multilabel_classifier.onnx"; \
+			echo "Model downloaded to pkg/inference/nn/vex8s_cve_classifier.onnx"; \
 		else \
 			echo "Failed to download model artifact."; exit 1; \
 		fi; \
