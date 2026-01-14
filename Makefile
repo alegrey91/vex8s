@@ -10,7 +10,7 @@ BUILD_VARS=GOTOOLCHAIN=go1.25.3 GOEXPERIMENT=jsonv2
 all: deps build
 
 ## build: Build the binary
-build:
+build: download-model
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p ./bin
 	$(BUILD_VARS) go build -o $(BINARY_PATH) main.go
@@ -63,6 +63,26 @@ lint:
 	else \
 		echo "ERROR: golangci-lint not installed. Run: make install-tools" ; \
 		exit 1 ; \
+	fi
+
+## download-model: Download the latest model artifact if not present
+.PHONY: download-model
+download-model:
+	@if [ -f pkg/inference/nn/cve_multilabel_classifier.onnx ]; then \
+		echo "Model artifact already present at pkg/inference/nn/cve_multilabel_classifier.onnx"; \
+	else \
+		echo "Model artifact not found. Downloading latest from GitHub..."; \
+		LATEST_URL=$$(curl -s https://api.github.com/repos/alegrey91/vex8s-model/releases/latest | grep browser_download_url | grep cve_multilabel_classifier.onnx | cut -d '"' -f 4); \
+		if [ -z "$$LATEST_URL" ]; then \
+			echo "Could not find model artifact in latest release."; exit 1; \
+		fi; \
+		mkdir -p pkg/inference/nn/; \
+		curl -L -o pkg/inference/nn/cve_multilabel_classifier.onnx "$$LATEST_URL"; \
+		if [ $$? -eq 0 ]; then \
+			echo "Model downloaded to pkg/inference/nn/cve_multilabel_classifier.onnx"; \
+		else \
+			echo "Failed to download model artifact."; exit 1; \
+		fi; \
 	fi
 
 ## install-tools: Install trivy and golangci-lint
