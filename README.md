@@ -21,13 +21,7 @@ It is based on the following concept:
 
 ## Installation
 
-You can install it directly:
-
-```
-GOEXPERIMENT=jsonv2 go install github.com/alegrey91/vex8s@latest
-```
-
-Or you can build it manually:
+You can build it manually:
 
 ```
 make build
