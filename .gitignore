@@ -1,1 +1,2 @@
 bin/
+pkg/inference/nn/*.onnx
