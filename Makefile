@@ -19,7 +19,7 @@ build: download-model
 
 ## test: Run all tests
 .PHONY: test
-test: test-unit test-integration
+test: download-model test-unit test-integration
 
 ## test: Test unit tests
 test-unit:
