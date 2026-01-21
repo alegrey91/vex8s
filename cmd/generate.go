@@ -24,6 +24,7 @@ var (
 	scanEngine         string
 	outputPath         string
 	showCVEs           bool
+	showMitigation     bool
 	showSecContext     bool
 	vexAuthor          string
 	vexAuthorRole      string
@@ -128,6 +129,9 @@ var generateCmd = &cobra.Command{
 			var mitigated []mitigation.CVE
 			for _, cve := range cves {
 				if mitigation.IsCVEMitigated(cve, podSpec, &container, model) {
+					if showMitigation {
+						fmt.Printf("[✓] CVE %s: %s mitigated\n", cve.ID, cve.CWEs)
+					}
 					mitigated = append(mitigated, cve)
 				}
 			}
@@ -183,6 +187,7 @@ func init() {
 
 	// Show flags
 	generateCmd.Flags().BoolVar(&showCVEs, "show.cve", false, "show CVE list")
+	generateCmd.Flags().BoolVar(&showMitigation, "show.mitigation", false, "show mitigation status")
 	generateCmd.Flags().BoolVar(&showSecContext, "show.securitycontext", false, "show manifest SecurityContext")
 
 	// VEX flags
