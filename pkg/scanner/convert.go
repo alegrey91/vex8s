@@ -28,9 +28,10 @@ func convertGrypeReport(report GrypeReport) []mitigation.CVE {
 			cweList = append(cweList, cwe.CWE)
 		}
 		cves = append(cves, mitigation.CVE{
-			ID:   vuln.Vulnerability.ID,
-			PURL: vuln.Artifact.PURL,
-			CWEs: cweList,
+			ID:          vuln.Vulnerability.ID,
+			Description: vuln.Vulnerability.Description,
+			PURL:        vuln.Artifact.PURL,
+			CWEs:        cweList,
 		})
 	}
 
