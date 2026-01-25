@@ -15,7 +15,6 @@ var (
 		"arbitrary_file_write",
 		"system_privileges_escalation",
 		"resource_exhaustion",
-		"code_injection",
 		"arbitrary_file_read",
 		"application_privilege_escalation",
 	}

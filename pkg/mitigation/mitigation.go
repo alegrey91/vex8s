@@ -119,14 +119,6 @@ func classMitigations(label string) MitigationRule {
 				return false
 			},
 		}
-	case "code_injection":
-		return MitigationRule{
-			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
-				// we are not able to mitigate code injection
-				// vulnerabilities at the moment
-				return false
-			},
-		}
 	case "application_privilege_escalation":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
