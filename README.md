@@ -19,6 +19,8 @@ It is based on the following concept:
 * Combining both analyses allows the system to determine if a CVE is exploitable in a given workload configuration.
 * If it results in a CVE mitigation, we add this to the final VEX document.
 
+For a more in-depth reading you can consult this article: [Environment-Aware Vulnerability Suppression Using Kubernetes Security Contexts and VEX](./docs/environmet_aware_vulnerability_suppression_using_kubernetes_security_context_and_vex.pdf)
+
 ## Installation
 
 You can build it manually:
