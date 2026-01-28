@@ -14,12 +14,16 @@ The project aims to assess the exploitability of known CVEs within Kubernetes wo
 It is based on the following concept:
 
 * Each CVE is categorized into one or more vulnerability classes ([CWE](https://cwe.mitre.org/index.html))
+* CVE description is processed by an embedded ML [model](https://github.com/alegrey91/vex8s-model) to predict its [*exploitation category*](https://github.com/alegrey91/vex8s-model?tab=readme-ov-file#classification).
+* Both the CWEs and the predicted *exploitation categories* are combined to determine if the CVE is mitigable.
 * Each class, maps to a set of Kubernetes `securityContext` settings that can block or reduce the impact.
 * By parsing a Kubernetes manifest, we can inspect the container's `securityContext` to evaluate whether the relevant settings are in place.
 * Combining both analyses allows the system to determine if a CVE is exploitable in a given workload configuration.
 * If it results in a CVE mitigation, we add this to the final VEX document.
 
-For a more in-depth reading you can consult this article: [Environment-Aware Vulnerability Suppression Using Kubernetes Security Contexts and VEX](./docs/environmet_aware_vulnerability_suppression_using_kubernetes_security_context_and_vex.pdf)
+For a more in-depth reading you can consult this article: 
+
+[Environment-Aware Vulnerability Suppression Using Kubernetes Security Contexts and VEX](./docs/environmet_aware_vulnerability_suppression_using_kubernetes_security_context_and_vex.pdf)
 
 ## Installation
 
