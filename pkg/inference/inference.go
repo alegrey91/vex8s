@@ -27,15 +27,18 @@ var onnxModel []byte
 //go:embed nn/libonnxruntime.so
 var onnxSO []byte
 
-const ModelVersion = "unknown"
+var ModelVersion = "unknown"
 
 type Model struct {
 	inputName  string
 	outputName string
+	Version    string
 }
 
 func NewModel() *Model {
-	return &Model{}
+	return &Model{
+		Version: ModelVersion,
+	}
 }
 
 func (m *Model) Setup() error {
