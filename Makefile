@@ -4,6 +4,10 @@ BINARY_NAME=vex8s
 BINARY_PATH=./bin/$(BINARY_NAME)
 BUILD_VARS=GOTOOLCHAIN=go1.25.3 GOEXPERIMENT=jsonv2
 
+include model-version.txt
+export MODEL_VERSION
+export MODEL_REPO
+
 .PHONY: all build clean deps lint install-tools help
 
 # Default target
@@ -13,9 +17,8 @@ all: deps build
 build: download-model
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p ./bin
-	@export $$(cat model-version.txt | xargs); \
 	$(BUILD_VARS) go build \
-		-ldflags "-X 'path/to/your/package.ModelVersion=$$MODEL_VERSION'" \
+		-ldflags '-s -w -X "github.com/alegrey91/vex8s/pkg/inference.ModelVersion=${MODEL_VERSION}"' \
 		-o $(BINARY_PATH) \
 		main.go
 	chmod +x $(BINARY_PATH)

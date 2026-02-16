@@ -38,3 +38,11 @@ stdout '"role": "SWE",'
 exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --output nginx.vex.json
 exists nginx.vex.json
 grep '"tooling": "vex8s"' nginx.vex.json
+
+# model version.
+exec vex8s model --version
+! stdout 'Model Version: unknown'
+
+# model prediction.
+exec vex8s model --predict "this is a CVE description"
+stdout 'Predicted labels: \[other\]'
