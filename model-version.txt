@@ -1,0 +1,2 @@
+MODEL_VERSION=v0.4.0
+MODEL_REPO=github.com/alegrey91/vex8s-model

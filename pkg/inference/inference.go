@@ -17,6 +17,7 @@ var (
 		"resource_exhaustion",
 		"arbitrary_file_read",
 		"application_privilege_escalation",
+		"application_crash",
 	}
 )
 
@@ -25,6 +26,8 @@ var onnxModel []byte
 
 //go:embed nn/libonnxruntime.so
 var onnxSO []byte
+
+const ModelVersion = "unknown"
 
 type Model struct {
 	inputName  string
