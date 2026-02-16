@@ -13,7 +13,11 @@ all: deps build
 build: download-model
 	@echo "Building $(BINARY_NAME)..."
 	@mkdir -p ./bin
-	$(BUILD_VARS) go build -o $(BINARY_PATH) main.go
+	@export $$(cat model-version.txt | xargs); \
+	$(BUILD_VARS) go build \
+		-ldflags "-X 'path/to/your/package.ModelVersion=$$MODEL_VERSION'" \
+		-o $(BINARY_PATH) \
+		main.go
 	chmod +x $(BINARY_PATH)
 	@echo "✓ Binary built: $(BINARY_PATH)"
 
@@ -71,17 +75,22 @@ download-model:
 	@if [ -f pkg/inference/nn/vex8s_cve_classifier.onnx ]; then \
 		echo "Model artifact already present at pkg/inference/nn/vex8s_cve_classifier.onnx"; \
 	else \
-		echo "Model artifact not found. Downloading latest from GitHub..."; \
-		LATEST_URL=$$(curl -s https://api.github.com/repos/alegrey91/vex8s-model/releases/latest | grep browser_download_url | grep vex8s_cve_classifier.onnx | cut -d '"' -f 4); \
-		if [ -z "$$LATEST_URL" ]; then \
-			echo "Could not find model artifact in latest release."; exit 1; \
+		echo "Model artifact not found. Downloading from GitHub..."; \
+		if [ ! -f model-version.txt ]; then \
+			echo "Error: model-version.txt not found in project root"; exit 1; \
 		fi; \
+		export $$(cat model-version.txt | xargs); \
+		if [ -z "$$MODEL_VERSION" ] || [ -z "$$MODEL_REPO" ]; then \
+			echo "Error: MODEL_VERSION or MODEL_REPO not set in model-version.txt"; exit 1; \
+		fi; \
+		echo "Using model version: $$MODEL_VERSION from $$MODEL_REPO"; \
+		DOWNLOAD_URL="https://$$MODEL_REPO/releases/download/$$MODEL_VERSION/vex8s_cve_classifier.onnx"; \
 		mkdir -p pkg/inference/nn/; \
-		curl -L -o pkg/inference/nn/vex8s_cve_classifier.onnx "$$LATEST_URL"; \
+		curl -L -o pkg/inference/nn/vex8s_cve_classifier.onnx "$$DOWNLOAD_URL"; \
 		if [ $$? -eq 0 ]; then \
-			echo "Model downloaded to pkg/inference/nn/vex8s_cve_classifier.onnx"; \
+			echo "Model $$MODEL_VERSION downloaded to pkg/inference/nn/vex8s_cve_classifier.onnx"; \
 		else \
-			echo "Failed to download model artifact."; exit 1; \
+			echo "Failed to download model from $$DOWNLOAD_URL"; exit 1; \
 		fi; \
 	fi
 
