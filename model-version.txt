@@ -1,2 +1,2 @@
-MODEL_VERSION=v0.5.2-rc2
+MODEL_VERSION=v0.5.2-rc4
 MODEL_REPO=github.com/alegrey91/vex8s-model
