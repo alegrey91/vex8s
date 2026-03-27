@@ -51,6 +51,7 @@ clean:
 	@echo "Cleaning..."
 	@rm -rf ./bin
 	@rm -rf ./output
+	@rm -rf ./pkg/inference/nn/vex8s_cve_classifier.onnx
 	go clean
 	@echo "✓ Cleaned"
 
