@@ -92,7 +92,7 @@ func classMitigations(label string) MitigationRule {
 					hasVolumeMountReadOnly(c)
 			},
 		}
-	case "system_privilege_escalation":
+	case "system_privileges_escalation":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
 				// privileged: false
@@ -120,7 +120,7 @@ func classMitigations(label string) MitigationRule {
 				return false
 			},
 		}
-	case "application_privilege_escalation":
+	case "application_privileges_escalation":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
 				// we are not able to mitigate application privilege escalation
