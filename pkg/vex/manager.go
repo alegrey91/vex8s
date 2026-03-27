@@ -32,7 +32,7 @@ func GenerateVEX(mitigated []mitigation.CVE, info VEXInfo) (govex.VEX, error) {
 
 		impact := "Mitigated by Kubernetes securityContext"
 		if len(m.Labels) > 0 {
-			impact = fmt.Sprintf("Mitigated by Kubernetes securityContext: classified as %s", strings.Join(m.Labels, ", "))
+			impact = fmt.Sprintf("Mitigated by Kubernetes configuration: classified as %s", strings.Join(m.Labels, ", "))
 		}
 
 		doc.Statements = append(doc.Statements, govex.Statement{
