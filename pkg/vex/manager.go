@@ -2,6 +2,7 @@ package vex
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/alegrey91/vex8s/pkg/mitigation"
 	govex "github.com/openvex/go-vex/pkg/vex"
@@ -29,6 +30,11 @@ func GenerateVEX(mitigated []mitigation.CVE, info VEXInfo) (govex.VEX, error) {
 			return doc, fmt.Errorf("failed parsing PURL: %w", err)
 		}
 
+		impact := "Mitigated by Kubernetes securityContext"
+		if len(m.Labels) > 0 {
+			impact = fmt.Sprintf("Mitigated by Kubernetes securityContext: classified as %s", strings.Join(m.Labels, ", "))
+		}
+
 		doc.Statements = append(doc.Statements, govex.Statement{
 			Vulnerability: govex.Vulnerability{
 				Name: govex.VulnerabilityID(m.ID),
@@ -45,7 +51,7 @@ func GenerateVEX(mitigated []mitigation.CVE, info VEXInfo) (govex.VEX, error) {
 			},
 			Status:          govex.StatusNotAffected,
 			Justification:   govex.InlineMitigationsAlreadyExist,
-			ImpactStatement: "Mitigated by Kubernetes securityContext",
+			ImpactStatement: impact,
 		})
 	}
 

@@ -11,6 +11,7 @@ type CVE struct {
 	Description string   `json:"description"`
 	PURL        string   `json:"purl"`
 	CWEs        []string `json:"cwes"`
+	Labels      []string `json:"labels,omitempty"`
 }
 
 type MitigationRule struct {
@@ -142,18 +143,19 @@ func classMitigations(label string) MitigationRule {
 	}
 }
 
-func IsCVEMitigated(cve CVE, spec *corev1.PodSpec, ct *corev1.Container, m *inference.Model) bool {
+func IsCVEMitigated(cve *CVE, spec *corev1.PodSpec, ct *corev1.Container, m *inference.Model) bool {
 	if len(cve.CWEs) == 0 {
 		return false
 	}
 
 	labels := m.Predict(cve.Description)
 
-	mitigateByLabel := false
+	mitigateByLabel := true
 	// All predicted labels must be mitigated
 	for _, label := range labels {
-		if classMitigations(label).Verify(spec, ct) {
-			mitigateByLabel = true
+		if !classMitigations(label).Verify(spec, ct) {
+			mitigateByLabel = false
+			break
 		}
 	}
 	if !mitigateByLabel {
@@ -171,5 +173,6 @@ func IsCVEMitigated(cve CVE, spec *corev1.PodSpec, ct *corev1.Container, m *infe
 		return false
 	}
 
+	cve.Labels = labels
 	return true
 }

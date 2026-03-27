@@ -127,12 +127,12 @@ var generateCmd = &cobra.Command{
 			defer model.Destroy()
 
 			var mitigated []mitigation.CVE
-			for _, cve := range cves {
-				if mitigation.IsCVEMitigated(cve, podSpec, &container, model) {
+			for i := range cves {
+				if mitigation.IsCVEMitigated(&cves[i], podSpec, &container, model) {
 					if showMitigation {
-						fmt.Printf("[✓] CVE %s: %s mitigated\n", cve.ID, cve.CWEs)
+						fmt.Printf("[✓] CVE %s: %s mitigated\n", cves[i].ID, cves[i].CWEs)
 					}
-					mitigated = append(mitigated, cve)
+					mitigated = append(mitigated, cves[i])
 				}
 			}
 			fmt.Printf("[✓] Mitigated %d CVEs for container %s\n", len(mitigated), image)
