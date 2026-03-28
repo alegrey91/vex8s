@@ -1,6 +1,8 @@
 package mitigation
 
 import (
+	"fmt"
+
 	"github.com/alegrey91/vex8s/pkg/inference"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -148,7 +150,11 @@ func IsCVEMitigated(cve *CVE, spec *corev1.PodSpec, ct *corev1.Container, m *inf
 		return false
 	}
 
-	labels := m.Predict(cve.Description)
+	labels, err := m.Predict(cve.Description)
+	if err != nil {
+		fmt.Println(err)
+		return false
+	}
 
 	mitigateByLabel := true
 	// All predicted labels must be mitigated
@@ -162,11 +168,12 @@ func IsCVEMitigated(cve *CVE, spec *corev1.PodSpec, ct *corev1.Container, m *inf
 		return false
 	}
 
-	mitigateByCWE := false
+	mitigateByCWE := true
 	// All CWEs must be mitigated
 	for _, cwe := range cve.CWEs {
-		if cweToClass(cwe).Verify(spec, ct) {
-			mitigateByCWE = true
+		if !cweToClass(cwe).Verify(spec, ct) {
+			mitigateByCWE = false
+			break
 		}
 	}
 	if !mitigateByCWE {

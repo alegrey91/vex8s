@@ -16,7 +16,7 @@ var (
 		"system_privileges_escalation",
 		"resource_exhaustion",
 		"arbitrary_file_read",
-		"application_privilege_escalation",
+		"application_privileges_escalation",
 		"application_crash",
 	}
 )
@@ -67,12 +67,11 @@ func (m *Model) Destroy() {
 	os.Remove(path.Join("/tmp", "libonnxruntime.so"))
 }
 
-func (m *Model) Predict(inputText string) []string {
+func (m *Model) Predict(inputText string) ([]string, error) {
 	inputShape := ort.NewShape(1, 1)
 	inputTensor, err := ort.NewStringTensor(inputShape)
 	if err != nil {
-		fmt.Printf("failed to create input tensor: %v\n", err)
-		os.Exit(1)
+		return []string{}, fmt.Errorf("failed to create input tensor: %v", err)
 	}
 	defer inputTensor.Destroy()
 
@@ -81,8 +80,7 @@ func (m *Model) Predict(inputText string) []string {
 	outputShape := ort.NewShape(1, int64(len(LABELS)))
 	outputTensor, err := ort.NewEmptyTensor[int64](outputShape)
 	if err != nil {
-		fmt.Printf("failed to create output tensor: %v\n", err)
-		os.Exit(1)
+		return []string{}, fmt.Errorf("failed to create output tensor: %v", err)
 	}
 	defer outputTensor.Destroy()
 
@@ -96,14 +94,12 @@ func (m *Model) Predict(inputText string) []string {
 		nil, // options
 	)
 	if err != nil {
-		fmt.Printf("failed to create session: %v\n", err)
-		os.Exit(1)
+		return []string{}, fmt.Errorf("failed to create session: %v", err)
 	}
 	defer session.Destroy()
 
 	if err := session.Run(); err != nil {
-		fmt.Printf("failed to run inference: %v\n", err)
-		os.Exit(1)
+		return []string{}, fmt.Errorf("failed to run inference: %v", err)
 	}
 
 	outputData := outputTensor.GetData()
@@ -121,8 +117,8 @@ func (m *Model) Predict(inputText string) []string {
 	}
 
 	if len(matchingLabels) > 0 {
-		return matchingLabels
+		return matchingLabels, nil
 	}
 
-	return []string{"other"}
+	return []string{"other"}, nil
 }

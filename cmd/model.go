@@ -32,7 +32,11 @@ var modelCmd = &cobra.Command{
 			}
 			defer model.Destroy()
 
-			labels := model.Predict(predictLabels)
+			labels, err := model.Predict(predictLabels)
+			if err != nil {
+				return fmt.Errorf("[!] Error: model prediction: %w", err)
+			}
+
 			fmt.Printf("Predicted labels: %v\n", labels)
 			return nil
 		}
