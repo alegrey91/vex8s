@@ -22,12 +22,17 @@ type MitigationRule struct {
 
 func cweToClass(cwe string) MitigationRule {
 	switch cwe {
+	// Suppressed by arbitrary_file_write:
 	// CWE-22: Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')
 	// https://cwe.mitre.org/data/definitions/22.html
 	// CWE-23: Relative Path Traversal
 	// https://cwe.mitre.org/data/definitions/23.html
 	// CWE-36: Absolute Path Traversal
 	// https://cwe.mitre.org/data/definitions/36.html
+	// CWE-59: Improper Link Resolution Before File Access ('Link Following')
+	// https://cwe.mitre.org/data/definitions/59.html
+	// CWE-73: External Control of File Name or Path
+	// https://cwe.mitre.org/data/definitions/73.html
 	// CWE-276: Incorrect Default Permissions
 	// https://cwe.mitre.org/data/definitions/276.html
 	// CWE-377: Insecure Temporary File
@@ -40,12 +45,15 @@ func cweToClass(cwe string) MitigationRule {
 	// https://cwe.mitre.org/data/definitions/434.html
 	// CWE-732: Incorrect Permission Assignment for Critical Resource
 	// https://cwe.mitre.org/data/definitions/732.html
-	case "CWE-22", "CWE-23", "CWE-36", "CWE-276", "CWE-377", "CWE-378", "CWE-379", "CWE-434", "CWE-732":
+	case "CWE-22", "CWE-23", "CWE-36", "CWE-59",
+		"CWE-73", "CWE-276", "CWE-377", "CWE-378",
+		"CWE-379", "CWE-434", "CWE-732":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
 				return true
 			},
 		}
+	// Suppressed by system_privileges_escalation:
 	// CWE-77: Improper Neutralization of Special Elements used in a Command
 	// ('Command Injection')
 	// https://cwe.mitre.org/data/definitions/77.html
@@ -58,12 +66,23 @@ func cweToClass(cwe string) MitigationRule {
 	// https://cwe.mitre.org/data/definitions/266.html
 	// CWE-269: Improper Privilege Management
 	// https://cwe.mitre.org/data/definitions/269.html
-	case "CWE-77", "CWE-78", "CWE-250", "CWE-266", "CWE-269":
+	// CWE-271: Privilege Dropping / Lowering Errors
+	// https://cwe.mitre.org/data/definitions/271.html
+	// CWE-272: Least Privilege Violation
+	// https://cwe.mitre.org/data/definitions/272.html
+	// CWE-273: Improper Check for Dropped Privileges
+	// https://cwe.mitre.org/data/definitions/273.html
+	// CWE-653: Improper Isolation or Compartmentalization
+	// https://cwe.mitre.org/data/definitions/653.html
+	case "CWE-77", "CWE-78", "CWE-250", "CWE-266",
+		"CWE-269", "CWE-271", "CWE-272", "CWE-273",
+		"CWE-653":
 		return MitigationRule{
 			Verify: func(p *corev1.PodSpec, c *corev1.Container) bool {
 				return true
 			},
 		}
+	// Suppressed by resource_exhaustion:
 	// CWE-400: Uncontrolled Resource Consumption
 	// https://cwe.mitre.org/data/definitions/400.html
 	// CWE-770: Allocation of Resources Without Limits or Throttling
