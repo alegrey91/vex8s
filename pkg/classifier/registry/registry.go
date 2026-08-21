@@ -8,6 +8,7 @@ import (
 
 	"github.com/alegrey91/vex8s/pkg/classifier"
 	"github.com/alegrey91/vex8s/pkg/classifier/embedded"
+	"github.com/alegrey91/vex8s/pkg/classifier/gemini"
 )
 
 // Engine identifies a classifier backend selectable by the user.
@@ -19,6 +20,9 @@ const (
 	// EngineAnthropic is a placeholder for the future Anthropic LLM backend.
 	// It is intentionally not implemented yet; see New.
 	EngineAnthropic Engine = "anthropic"
+	// EngineGemini uses Google's Gemini API to classify CVE descriptions.
+	// Requires the GEMINI_API_KEY environment variable.
+	EngineGemini Engine = "gemini"
 )
 
 // Options carries backend-specific configuration. LLM backends will read fields
@@ -45,12 +49,31 @@ func New(opts Options) (classifier.Classifier, error) {
 	return classifier.Cached(inner), nil
 }
 
+// Validate checks that the selected engine is known and that any required
+// configuration (e.g. API keys for LLM backends) is present, without building
+// the classifier or making network calls. Call this early (e.g. in a command's
+// PreRunE) so misconfiguration surfaces before any work is done.
+func Validate(opts Options) error {
+	switch opts.Engine {
+	case EngineEmbedded, "":
+		return nil
+	case EngineAnthropic:
+		return fmt.Errorf("classifier engine %q is not implemented yet", opts.Engine)
+	case EngineGemini:
+		return gemini.Validate()
+	default:
+		return fmt.Errorf("unknown classifier engine %q", opts.Engine)
+	}
+}
+
 func build(opts Options) (classifier.Classifier, error) {
 	switch opts.Engine {
 	case EngineEmbedded, "":
 		return embedded.New()
 	case EngineAnthropic:
 		return nil, fmt.Errorf("classifier engine %q is not implemented yet", opts.Engine)
+	case EngineGemini:
+		return gemini.New()
 	default:
 		return nil, fmt.Errorf("unknown classifier engine %q", opts.Engine)
 	}

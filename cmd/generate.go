@@ -52,6 +52,9 @@ var generateCmd = &cobra.Command{
 		if vulnReportPath == "" && scanEngine == "" {
 			return fmt.Errorf("[!] Error: at least one flag between -r or -s must be provided")
 		}
+		if err := registry.Validate(registry.Options{Engine: registry.Engine(classifierEngine)}); err != nil {
+			return fmt.Errorf("[!] Error: %w", err)
+		}
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -206,7 +209,7 @@ func init() {
 	generateCmd.Flags().StringVarP(&outputPath, "output", "o", "", "output VEX file path")
 
 	// Decision flags
-	generateCmd.Flags().StringVar(&classifierEngine, "classifier", "embedded", "classifier engine [embedded]")
+	generateCmd.Flags().StringVar(&classifierEngine, "classifier", "embedded", "classifier engine [embedded, gemini]")
 
 	// Show flags
 	generateCmd.Flags().BoolVar(&showCVEs, "show.cve", false, "show CVE list")
