@@ -44,11 +44,10 @@ func hasCapabilitiesDropAll(c *corev1.Container) bool {
 	if !containerHasSecurityContext(c) {
 		return false
 	}
-	hasDropAll := false
-	if c.SecurityContext.Capabilities.Drop != nil {
-		hasDropAll = slices.Contains(c.SecurityContext.Capabilities.Drop, "ALL")
+	if c.SecurityContext.Capabilities == nil || c.SecurityContext.Capabilities.Drop == nil {
+		return false
 	}
-	return hasDropAll
+	return slices.Contains(c.SecurityContext.Capabilities.Drop, "ALL")
 }
 
 // hasCapabilitiesAddContains checks if the securityContext.Capabilities.Add attribute
