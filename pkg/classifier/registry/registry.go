@@ -35,6 +35,17 @@ type Options struct {
 // The rest of the pipeline consumes the classifier.Classifier interface and
 // needs no changes.
 func New(opts Options) (classifier.Classifier, error) {
+	inner, err := build(opts)
+	if err != nil {
+		return nil, err
+	}
+	// Memoize predictions by CVE ID so a CVE that appears across multiple
+	// packages/containers is classified only once. Matters most for expensive
+	// LLM backends that call a remote API per classification.
+	return classifier.Cached(inner), nil
+}
+
+func build(opts Options) (classifier.Classifier, error) {
 	switch opts.Engine {
 	case EngineEmbedded, "":
 		return embedded.New()
