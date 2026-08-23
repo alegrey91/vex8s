@@ -1,4 +1,4 @@
-package gemini
+package classifier
 
 import (
 	"fmt"
@@ -37,8 +37,10 @@ var classDescriptions = map[class.ExploitClass]string{
 		"disclosure that is not file read, spoofing, or an unclear/generic description).",
 }
 
-// buildPrompt renders the full instruction sent to Gemini for a single CVE.
-func buildPrompt(cve mitigation.CVE) string {
+// BuildPrompt renders the full instruction sent to an LLM backend for a single
+// CVE. It is shared across LLM providers (Gemini, Anthropic, ...) so every
+// backend reasons about the same taxonomy and returns the same JSON shape.
+func BuildPrompt(cve mitigation.CVE) string {
 	var b strings.Builder
 
 	b.WriteString("You are a security expert classifying software vulnerabilities (CVEs) by the " +
