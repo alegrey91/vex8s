@@ -28,6 +28,7 @@ var (
 	showMitigation     bool
 	showMitigated      bool
 	showSecContext     bool
+	showClassification bool
 	vexAuthor          string
 	vexAuthorRole      string
 	suppressDisclaimer bool
@@ -65,7 +66,7 @@ var generateCmd = &cobra.Command{
 		}
 
 		// Build the classifier once for the whole run.
-		clf, err := registry.New(registry.Options{Engine: registry.Engine(classifierEngine)})
+		clf, err := registry.New(registry.Options{Engine: registry.Engine(classifierEngine), ShowClassification: showClassification})
 		if err != nil {
 			return fmt.Errorf("[!] Error: setting up classifier: %w", err)
 		}
@@ -216,6 +217,7 @@ func init() {
 	generateCmd.Flags().BoolVar(&showMitigation, "show.mitigation", false, "show mitigation status")
 	generateCmd.Flags().BoolVar(&showMitigated, "show.mitigated", false, "show only mitigated CVE list")
 	generateCmd.Flags().BoolVar(&showSecContext, "show.securitycontext", false, "show manifest SecurityContext")
+	generateCmd.Flags().BoolVar(&showClassification, "show.classification", false, "show classifier logs")
 
 	// VEX flags
 	generateCmd.Flags().StringVar(&vexAuthor, "vex.author", "Unknown Author", "set VEX author")

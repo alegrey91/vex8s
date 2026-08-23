@@ -2,6 +2,8 @@ package classifier
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"sync"
 
 	"github.com/alegrey91/vex8s/pkg/mitigation"
@@ -14,21 +16,26 @@ import (
 // no-op for cheap backends but avoids redundant work for expensive ones such as
 // LLM-backed engines that hit a remote API per call.
 type caching struct {
-	inner Classifier
+	inner    Classifier
+	showLogs bool
 
 	mu    sync.Mutex
 	cache map[string]Prediction
 }
 
-// Cached returns a Classifier that memoizes inner's predictions by CVE ID.
-func Cached(inner Classifier) Classifier {
-	return &caching{inner: inner, cache: map[string]Prediction{}}
+// Cached returns a Classifier that memoizes inner's predictions by CVE ID. When
+// showLogs is true, cache hits are reported to stderr.
+func Cached(inner Classifier, showLogs bool) Classifier {
+	return &caching{inner: inner, showLogs: showLogs, cache: map[string]Prediction{}}
 }
 
 func (c *caching) Classify(ctx context.Context, cve mitigation.CVE) (Prediction, error) {
 	c.mu.Lock()
 	if p, ok := c.cache[cve.ID]; ok {
 		c.mu.Unlock()
+		if c.showLogs {
+			fmt.Fprintf(os.Stderr, "[*] classifier: cache hit for %s\n", cve.ID)
+		}
 		return p, nil
 	}
 	c.mu.Unlock()

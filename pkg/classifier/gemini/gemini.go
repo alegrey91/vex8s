@@ -24,13 +24,14 @@ const (
 	// modelEnv optionally overrides the model id.
 	modelEnv = "GEMINI_MODEL"
 	// defaultModel is used when GEMINI_MODEL is unset.
-	defaultModel = "gemini-2.5-flash"
+	defaultModel = "gemini-3.7-flash"
 )
 
 // Classifier calls the Gemini API to classify CVE descriptions.
 type Classifier struct {
-	client *genai.Client
-	model  string
+	client   *genai.Client
+	model    string
+	showLogs bool
 }
 
 // Validate checks that the required configuration is present without building
@@ -45,8 +46,9 @@ func Validate() error {
 
 // New constructs the Gemini classifier. It fails fast if the required
 // GEMINI_API_KEY is not present, so misconfiguration surfaces before any CVE is
-// processed rather than mid-run.
-func New() (*Classifier, error) {
+// processed rather than mid-run. When showLogs is true, per-CVE classification
+// progress is written to stderr.
+func New(showLogs bool) (*Classifier, error) {
 	if err := Validate(); err != nil {
 		return nil, err
 	}
@@ -63,17 +65,21 @@ func New() (*Classifier, error) {
 		return nil, fmt.Errorf("gemini: creating client: %w", err)
 	}
 
-	return &Classifier{client: client, model: model}, nil
+	return &Classifier{client: client, model: model, showLogs: showLogs}, nil
 }
 
 // Classify sends the CVE description to Gemini and maps the structured response
 // back to exploitation classes. The model is constrained via a response schema
 // to return a JSON object with a "classes" array of canonical class identifiers.
 func (c *Classifier) Classify(ctx context.Context, cve mitigation.CVE) (classifier.Prediction, error) {
+	if c.showLogs {
+		fmt.Fprintf(os.Stderr, "[*] classifier(gemini:%s): calling API for %s\n", c.model, cve.ID)
+	}
+
 	resp, err := c.client.Models.GenerateContent(
 		ctx,
 		c.model,
-		genai.Text(buildPrompt(cve)),
+		genai.Text(classifier.BuildPrompt(cve)),
 		responseConfig(),
 	)
 	if err != nil {
@@ -98,6 +104,10 @@ func (c *Classifier) Classify(ctx context.Context, cve mitigation.CVE) (classifi
 			classes = append(classes, ec)
 			seen[ec] = true
 		}
+	}
+
+	if c.showLogs {
+		fmt.Fprintf(os.Stderr, "[+] classifier(gemini:%s): %s classified as %v\n", c.model, cve.ID, classes)
 	}
 
 	return classifier.Prediction{

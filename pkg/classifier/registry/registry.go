@@ -30,6 +30,8 @@ const (
 // New signature.
 type Options struct {
 	Engine Engine
+	// ShowClassification enables per-CVE classification logs on stderr.
+	ShowClassification bool
 }
 
 // New constructs the classifier for the requested engine.
@@ -46,7 +48,7 @@ func New(opts Options) (classifier.Classifier, error) {
 	// Memoize predictions by CVE ID so a CVE that appears across multiple
 	// packages/containers is classified only once. Matters most for expensive
 	// LLM backends that call a remote API per classification.
-	return classifier.Cached(inner), nil
+	return classifier.Cached(inner, opts.ShowClassification), nil
 }
 
 // Validate checks that the selected engine is known and that any required
@@ -69,11 +71,11 @@ func Validate(opts Options) error {
 func build(opts Options) (classifier.Classifier, error) {
 	switch opts.Engine {
 	case EngineEmbedded, "":
-		return embedded.New()
+		return embedded.New(opts.ShowClassification)
 	case EngineAnthropic:
 		return nil, fmt.Errorf("classifier engine %q is not implemented yet", opts.Engine)
 	case EngineGemini:
-		return gemini.New()
+		return gemini.New(opts.ShowClassification)
 	default:
 		return nil, fmt.Errorf("unknown classifier engine %q", opts.Engine)
 	}
