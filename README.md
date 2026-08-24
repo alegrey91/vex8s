@@ -99,6 +99,27 @@ vex8s generate --manifest examples/nginx.yaml --scan.engine grype --output nginx
 grype sbom:./nginx.grype.json --output table --vex nginx.vex.json --show-suppressed
 ```
 
+### Classifiers
+
+Each CVE is classified into one or more *exploitation classes*, which drive the
+mitigation decision. `vex8s` supports two classifier engines via `--classifier`:
+
+* **`embedded`** (default): an offline ONNX ML [model](https://github.com/alegrey91/vex8s-model)
+  bundled in the binary. No network access required.
+* **`gemini`**: uses Google's Gemini LLM to classify the CVE description.
+  Requires the `GEMINI_API_KEY` environment variable (optionally `GEMINI_MODEL`).
+
+```
+export GEMINI_API_KEY="your-api-key"
+
+vex8s generate --manifest examples/nginx.yaml --report nginx.trivy.json \
+  --output nginx.vex.json --classifier gemini
+```
+
+See the [documentation](./docs) — in particular the
+[User Guide](./docs/user-guide.md) — for a full walkthrough, the Gemini
+classifier setup, and a complete flag reference.
+
 ## References
 
 This project was inspired by Akihiro Suda's project [vexllm](https://github.com/AkihiroSuda/vexllm).
