@@ -1,0 +1,48 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cert-check
+  labels:
+    app: cert-check
+spec:
+  schedule: "0 8 * * 1"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: cert-check
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: cert-checker
+              image: curlimages/curl:8.11.1
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  for domain in example.com api.example.com; do
+                    echo "Checking $domain..."
+                    curl -sI "https://$domain" -o /dev/null -w "%{ssl_verify_result}\n"
+                  done
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 100
+                runAsGroup: 101
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                privileged: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                limits:
+                  cpu: "100m"
+                  memory: "32Mi"
+                requests:
+                  cpu: "10m"
+                  memory: "8Mi"
+          restartPolicy: OnFailure

@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: pg-backup
+  labels:
+    app: pg-backup
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      labels:
+        app: pg-backup
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: pg-dump
+          image: postgres:17.2-alpine
+          command:
+            - /bin/sh
+            - -c
+            - "pg_dump -h $PGHOST -U $PGUSER $PGDATABASE > /backup/dump.sql"
+          env:
+            - name: PGHOST
+              value: "postgres"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: password
+            - name: PGDATABASE
+              value: "mydb"
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 70
+            runAsGroup: 70
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            privileged: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+          volumeMounts:
+            - name: backup
+              mountPath: /backup
+              readOnly: true
+      volumes:
+        - name: backup
+          persistentVolumeClaim:
+            claimName: backup-pvc
+      restartPolicy: Never

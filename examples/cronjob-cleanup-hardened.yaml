@@ -1,0 +1,52 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: log-cleanup
+  labels:
+    app: log-cleanup
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: log-cleanup
+        spec:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: cleanup
+              image: alpine:3.21.2
+              command:
+                - /bin/sh
+                - -c
+                - "find /logs -type f -mtime +7 -name '*.log' -delete"
+              securityContext:
+                runAsNonRoot: true
+                runAsUser: 1000
+                runAsGroup: 1000
+                readOnlyRootFilesystem: true
+                allowPrivilegeEscalation: false
+                privileged: false
+                capabilities:
+                  drop: ["ALL"]
+              resources:
+                limits:
+                  cpu: "100m"
+                  memory: "64Mi"
+                requests:
+                  cpu: "10m"
+                  memory: "8Mi"
+              volumeMounts:
+                - name: logs
+                  mountPath: /logs
+                  readOnly: true
+          volumes:
+            - name: logs
+              persistentVolumeClaim:
+                claimName: app-logs
+          restartPolicy: OnFailure
