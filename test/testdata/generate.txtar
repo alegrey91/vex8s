@@ -16,8 +16,18 @@ stdout '"tooling": "vex8s"'
 exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --show.cve
 stdout -count=1 'CVE-2022-3627: \[CWE-787\]'
 
+# show CVE list before generating VEX document (grype).
+exec vex8s generate --manifest nginx.yaml --report nginx.grype.json --show.cve
+stdout -count=1 'CVE-2022-3627: \[CWE-787 CWE-787\]'
+
 # show SecurityContext used by provided manifest before generating VEX document.
 exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --show.securitycontext
+stdout '\[\+\] spec.SecurityContext:'
+stdout '\[\+\] container.SecurityContext:'
+stdout '  "readOnlyRootFilesystem": true,'
+
+# show SecurityContext used by provided manifest before generating VEX document (grype).
+exec vex8s generate --manifest nginx.yaml --report nginx.grype.json --show.securitycontext
 stdout '\[\+\] spec.SecurityContext:'
 stdout '\[\+\] container.SecurityContext:'
 stdout '  "readOnlyRootFilesystem": true,'
@@ -26,18 +36,35 @@ stdout '  "readOnlyRootFilesystem": true,'
 exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --suppress.disclaimer
 ! stdout '\[\!\] WARNING:'
 
+# suppress disclaimer generating VEX document (grype).
+exec vex8s generate --manifest nginx.yaml --report nginx.grype.json --suppress.disclaimer
+! stdout '\[\!\] WARNING:'
+
 # generate VEX document by setting author.
 exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --vex.author Me
+stdout '"author": "Me",'
+
+# generate VEX document by setting author (grype).
+exec vex8s generate --manifest nginx.yaml --report nginx.grype.json --vex.author Me
 stdout '"author": "Me",'
 
 # generate VEX document by setting role.
 exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --vex.role 'SWE'
 stdout '"role": "SWE",'
 
+# generate VEX document by setting role (grype).
+exec vex8s generate --manifest nginx.yaml --report nginx.grype.json --vex.role 'SWE'
+stdout '"role": "SWE",'
+
 # generate VEX document and save into a file.
 exec vex8s generate --manifest nginx.yaml --report nginx.trivy.json --output nginx.vex.json
 exists nginx.vex.json
 grep '"tooling": "vex8s"' nginx.vex.json
+
+# generate VEX document and save into a file (grype).
+exec vex8s generate --manifest nginx.yaml --report nginx.grype.json --output nginx.grype.vex.json
+exists nginx.grype.vex.json
+grep '"tooling": "vex8s"' nginx.grype.vex.json
 
 # model version.
 exec vex8s model --version
