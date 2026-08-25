@@ -71,22 +71,18 @@ func hasCapabilitiesAddContains(c *corev1.Container, capabilities []string) bool
 }
 
 func hasRunAsNonRoot(p *corev1.PodSpec, c *corev1.Container) bool {
-	if !containerHasSecurityContext(c) {
-		return false
+	// A non-nil container-level value overrides the pod-level one, so it is
+	// authoritative even when it is false (container explicitly runs as root).
+	if containerHasSecurityContext(c) && c.SecurityContext.RunAsNonRoot != nil {
+		return *c.SecurityContext.RunAsNonRoot
 	}
-	if c.SecurityContext.RunAsNonRoot != nil && *c.SecurityContext.RunAsNonRoot {
-		return true
-	}
-	if !podSpecHasSecurityContext(p) {
-		return false
-	}
-	if p.SecurityContext.RunAsNonRoot != nil && *p.SecurityContext.RunAsNonRoot {
-		return true
+	if podSpecHasSecurityContext(p) && p.SecurityContext.RunAsNonRoot != nil {
+		return *p.SecurityContext.RunAsNonRoot
 	}
 	return false
 }
 
-func hasAllowPrivilegeEscalation(c *corev1.Container) bool {
+func disallowsPrivilegeEscalation(c *corev1.Container) bool {
 	if !containerHasSecurityContext(c) {
 		return false
 	}
@@ -96,7 +92,7 @@ func hasAllowPrivilegeEscalation(c *corev1.Container) bool {
 	return false
 }
 
-func hasPrivileged(c *corev1.Container) bool {
+func isNotPrivileged(c *corev1.Container) bool {
 	if !containerHasSecurityContext(c) {
 		return false
 	}
@@ -107,17 +103,13 @@ func hasPrivileged(c *corev1.Container) bool {
 }
 
 func hasRunAsUser(p *corev1.PodSpec, c *corev1.Container) bool {
-	if !containerHasSecurityContext(c) {
-		return false
+	// A non-nil container-level value overrides the pod-level one, so it is
+	// authoritative even when it is a root uid (container explicitly runs as 0).
+	if containerHasSecurityContext(c) && c.SecurityContext.RunAsUser != nil {
+		return *c.SecurityContext.RunAsUser >= 1000
 	}
-	if c.SecurityContext.RunAsUser != nil && *c.SecurityContext.RunAsUser >= 1000 {
-		return true
-	}
-	if !podSpecHasSecurityContext(p) {
-		return false
-	}
-	if p.SecurityContext.RunAsUser != nil && *p.SecurityContext.RunAsUser >= 1000 {
-		return true
+	if podSpecHasSecurityContext(p) && p.SecurityContext.RunAsUser != nil {
+		return *p.SecurityContext.RunAsUser >= 1000
 	}
 	return false
 }

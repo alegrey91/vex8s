@@ -60,8 +60,8 @@ var rules = map[class.ExploitClass]Rule{
 	class.SystemPrivilegesEscalation: {
 		Kind: Blocks,
 		Required: []Check{
-			{"privileged=false", func(p *corev1.PodSpec, c *corev1.Container) bool { return hasPrivileged(c) }},
-			{"allowPrivilegeEscalation=false", func(p *corev1.PodSpec, c *corev1.Container) bool { return hasAllowPrivilegeEscalation(c) }},
+			{"privileged=false", func(p *corev1.PodSpec, c *corev1.Container) bool { return isNotPrivileged(c) }},
+			{"allowPrivilegeEscalation=false", func(p *corev1.PodSpec, c *corev1.Container) bool { return disallowsPrivilegeEscalation(c) }},
 			{"runAsNonRootOrNonZeroUser", func(p *corev1.PodSpec, c *corev1.Container) bool { return hasRunAsNonRoot(p, c) || hasRunAsUser(p, c) }},
 			{"capabilitiesDropAll", func(p *corev1.PodSpec, c *corev1.Container) bool { return hasCapabilitiesDropAll(c) }},
 		},

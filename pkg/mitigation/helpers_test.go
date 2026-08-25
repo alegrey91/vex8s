@@ -10,6 +10,10 @@ func boolPtr(v bool) *bool {
 	return &v
 }
 
+func int64Ptr(v int64) *int64 {
+	return &v
+}
+
 func Test_hasReadOnlyRootFileSystem(t *testing.T) {
 	tests := []struct {
 		name string
@@ -263,7 +267,8 @@ func Test_hasRunAsNonRoot(t *testing.T) {
 					RunAsNonRoot: boolPtr(false),
 				},
 			},
-			want: true,
+			// container-level value overrides the pod-level one: effective run as root.
+			want: false,
 		},
 	}
 	for _, tt := range tests {
@@ -271,6 +276,65 @@ func Test_hasRunAsNonRoot(t *testing.T) {
 			got := hasRunAsNonRoot(tt.p, tt.c)
 			if tt.want != got {
 				t.Errorf("hasRunAsNonRoot() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_hasRunAsUser(t *testing.T) {
+	tests := []struct {
+		name string
+		p    *corev1.PodSpec
+		c    *corev1.Container
+		want bool
+	}{
+		{
+			name: "runAsUser is non-root at container",
+			p:    &corev1.PodSpec{SecurityContext: &corev1.PodSecurityContext{}},
+			c: &corev1.Container{SecurityContext: &corev1.SecurityContext{
+				RunAsUser: int64Ptr(1000),
+			}},
+			want: true,
+		},
+		{
+			name: "runAsUser is root at container",
+			p:    &corev1.PodSpec{SecurityContext: &corev1.PodSecurityContext{}},
+			c: &corev1.Container{SecurityContext: &corev1.SecurityContext{
+				RunAsUser: int64Ptr(0),
+			}},
+			want: false,
+		},
+		{
+			name: "runAsUser not set at container / non-root at podSpec",
+			p: &corev1.PodSpec{SecurityContext: &corev1.PodSecurityContext{
+				RunAsUser: int64Ptr(1000),
+			}},
+			c:    &corev1.Container{SecurityContext: &corev1.SecurityContext{}},
+			want: true,
+		},
+		{
+			name: "runAsUser root at container overrides non-root podSpec",
+			p: &corev1.PodSpec{SecurityContext: &corev1.PodSecurityContext{
+				RunAsUser: int64Ptr(1000),
+			}},
+			c: &corev1.Container{SecurityContext: &corev1.SecurityContext{
+				RunAsUser: int64Ptr(0),
+			}},
+			// container-level value overrides the pod-level one: effective uid 0.
+			want: false,
+		},
+		{
+			name: "runAsUser not set anywhere",
+			p:    &corev1.PodSpec{SecurityContext: &corev1.PodSecurityContext{}},
+			c:    &corev1.Container{SecurityContext: &corev1.SecurityContext{}},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := hasRunAsUser(tt.p, tt.c)
+			if tt.want != got {
+				t.Errorf("hasRunAsUser() = %v, want %v", got, tt.want)
 			}
 		})
 	}
