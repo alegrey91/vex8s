@@ -1,0 +1,19 @@
+You are a security expert classifying software vulnerabilities (CVEs) by the concrete exploitation OUTCOME an attacker gains, NOT by the vulnerability type or root cause.
+
+Classify the CVE below into one or more of the following classes. A CVE may map to multiple classes. Choose every class that clearly applies based on the described impact. If nothing specific applies, use "other".
+
+Classes:
+{{range .Classes}}- {{.Name}}: {{.Desc}}
+{{end}}
+Guidelines:
+- Base your decision strictly on the described impact; do not speculate beyond the text.
+- Prefer a specific class over "other" whenever the impact is clear.
+- Do not include "other" together with any specific class.
+- Distinguish system-level from application-level privilege escalation carefully.
+
+CVE to classify:
+ID: {{.CVE.ID}}
+{{if .CVE.CWEs}}CWEs: {{join .CVE.CWEs ", "}}
+{{end}}Description: {{.CVE.Description}}
+
+Return a JSON object with a single field "classes" containing the array of matching class identifiers from the list above.

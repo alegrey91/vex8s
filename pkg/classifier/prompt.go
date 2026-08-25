@@ -1,12 +1,16 @@
 package classifier
 
 import (
-	"fmt"
+	_ "embed"
 	"strings"
+	"text/template"
 
 	"github.com/alegrey91/vex8s/pkg/class"
 	"github.com/alegrey91/vex8s/pkg/mitigation"
 )
+
+//go:embed prompt.tmpl
+var promptText string
 
 // classDescriptions documents, in security terms, what each exploitation class
 // means. The values describe the *outcome an attacker gains* (not the
@@ -37,39 +41,30 @@ var classDescriptions = map[class.ExploitClass]string{
 		"disclosure that is not file read, spoofing, or an unclear/generic description).",
 }
 
+// promptTemplate renders the full instruction sent to an LLM backend. It is
+// shared across LLM providers (Gemini, Anthropic, ...) so every backend reasons
+// about the same taxonomy and returns the same JSON shape.
+var promptTemplate = template.Must(template.New("prompt").
+	Funcs(template.FuncMap{"join": strings.Join}).
+	Parse(promptText))
+
 // BuildPrompt renders the full instruction sent to an LLM backend for a single
-// CVE. It is shared across LLM providers (Gemini, Anthropic, ...) so every
-// backend reasons about the same taxonomy and returns the same JSON shape.
+// CVE.
 func BuildPrompt(cve mitigation.CVE) string {
-	var b strings.Builder
-
-	b.WriteString("You are a security expert classifying software vulnerabilities (CVEs) by the " +
-		"concrete exploitation OUTCOME an attacker gains — NOT by the vulnerability type or root cause.\n\n")
-
-	b.WriteString("Classify the CVE below into one or more of the following classes. A CVE may map to " +
-		"multiple classes. Choose every class that clearly applies based on the described impact. " +
-		"If nothing specific applies, use \"other\".\n\n")
-
-	b.WriteString("Classes:\n")
+	type classEntry struct {
+		Name string
+		Desc string
+	}
+	classes := make([]classEntry, 0, len(class.All))
 	for _, c := range class.All {
-		fmt.Fprintf(&b, "- %s: %s\n", c, classDescriptions[c])
+		classes = append(classes, classEntry{Name: string(c), Desc: classDescriptions[c]})
 	}
 
-	b.WriteString("\nGuidelines:\n")
-	b.WriteString("- Base your decision strictly on the described impact; do not speculate beyond the text.\n")
-	b.WriteString("- Prefer a specific class over \"other\" whenever the impact is clear.\n")
-	b.WriteString("- Do not include \"other\" together with any specific class.\n")
-	b.WriteString("- Distinguish system-level from application-level privilege escalation carefully.\n\n")
-
-	b.WriteString("CVE to classify:\n")
-	fmt.Fprintf(&b, "ID: %s\n", cve.ID)
-	if len(cve.CWEs) > 0 {
-		fmt.Fprintf(&b, "CWEs: %s\n", strings.Join(cve.CWEs, ", "))
-	}
-	fmt.Fprintf(&b, "Description: %s\n", cve.Description)
-
-	b.WriteString("\nReturn a JSON object with a single field \"classes\" containing the array of " +
-		"matching class identifiers from the list above.")
+	var b strings.Builder
+	promptTemplate.Execute(&b, struct {
+		Classes []classEntry
+		CVE     mitigation.CVE
+	}{Classes: classes, CVE: cve})
 
 	return b.String()
 }
