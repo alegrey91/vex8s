@@ -41,12 +41,13 @@ attacker actually gains (e.g. `arbitrary_file_write`,
 combined with the workload's security settings to decide whether the CVE is
 mitigable.
 
-`vex8s` supports two classifier engines, selected with the `--classifier` flag:
+`vex8s` supports three classifier engines, selected with the `--classifier` flag:
 
 | Engine     | Flag value            | How it works                                             | Network |
 |------------|-----------------------|----------------------------------------------------------|---------|
 | Embedded   | `embedded` (default)  | Offline ONNX ML model bundled in the binary.             | No      |
 | Gemini     | `gemini`              | Google's Gemini LLM classifies the CVE description.      | Yes     |
+| Ollama     | `ollama`              | A local Ollama LLM classifies the CVE description.       | Local   |
 
 If you omit `--classifier`, the embedded model is used and no network access is
 required.
@@ -103,7 +104,90 @@ vex8s generate \
 [*] classifier: cache hit for CVE-2023-1234
 ```
 
-### Caching
+## Using the Ollama classifier
+
+The Ollama classifier sends each CVE's description to a locally running
+[Ollama](https://ollama.com) server and asks the model to classify it into the
+canonical exploitation classes. Like Gemini it can capture nuance in free-text
+descriptions that the embedded model may miss, but it runs entirely on your own
+machine, with no API key and no data leaving the host.
+
+### 1. Install Ollama and pull a model
+
+Install Ollama (see [ollama.com](https://ollama.com)) and start the server:
+
+```
+ollama serve
+```
+
+Pull a model. `qwen2.5:3b-instruct` (~2 GB) is a good default that runs on
+modest, CPU-only hardware while following the structured-output contract
+reliably:
+
+```
+ollama pull qwen2.5:3b-instruct
+```
+
+On very constrained machines try `llama3.2:1b`; with more headroom
+`llama3.2:3b` or a larger model generally improves accuracy.
+
+### 2. (Optional) Override host and model
+
+Defaults are `http://localhost:11434` and `qwen2.5:3b-instruct`:
+
+```
+export OLLAMA_HOST="http://localhost:11434"
+export OLLAMA_MODEL="qwen2.5:3b-instruct"
+```
+
+`vex8s` pings the server up front, so an unreachable server or wrong host fails
+immediately rather than mid-run.
+
+### 3. Run with `--classifier ollama`
+
+```
+vex8s generate \
+  --manifest examples/deployment-nginx-dummy.yaml \
+  --report nginx.trivy.json \
+  --output nginx.vex.json \
+  --classifier ollama
+```
+
+Add `--show.classification` to watch per-CVE activity on stderr:
+
+```
+[*] classifier(ollama:qwen2.5:3b-instruct): calling API for CVE-2023-1234
+[+] classifier(ollama:qwen2.5:3b-instruct): CVE-2023-1234 classified as [arbitrary_file_write]
+[*] classifier: cache hit for CVE-2023-1234
+```
+
+### Serving the model with `llmman`
+
+[`llmman`](https://github.com/alegrey91/llmman) can serve GGUF models behind an
+Ollama-compatible endpoint, so it works with the `ollama` engine directly.
+
+Pull and serve `qwen2.5:3b-instruct`:
+
+```
+llmman pull hf.co/Qwen/Qwen2.5-3B-Instruct
+llmman serve hf.co/Qwen/Qwen2.5-3B-Instruct
+```
+
+`llmman serve` listens on port `11434` by default, so `OLLAMA_HOST` usually
+needs no override. Set `OLLAMA_MODEL` to the tag you loaded and run:
+
+```
+export OLLAMA_MODEL="qwen2.5:3b-instruct"
+
+vex8s generate \
+  --manifest examples/deployment-nginx-dummy.yaml \
+  --report nginx.trivy.json \
+  --output nginx.vex.json \
+  --classifier ollama \
+  --show.classification
+```
+
+## Caching
 
 Because a CVE's exploitation class depends only on the vulnerability itself
 (not on the container it ships in), each CVE is classified **once per run** and
