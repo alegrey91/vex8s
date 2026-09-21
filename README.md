@@ -102,12 +102,15 @@ grype sbom:./nginx.grype.json --output table --vex nginx.vex.json --show-suppres
 ### Classifiers
 
 Each CVE is classified into one or more *exploitation classes*, which drive the
-mitigation decision. `vex8s` supports two classifier engines via `--classifier`:
+mitigation decision. `vex8s` supports three classifier engines via `--classifier`:
 
 * **`embedded`** (default): an offline ONNX ML [model](https://github.com/alegrey91/vex8s-model)
   bundled in the binary. No network access required.
 * **`gemini`**: uses Google's Gemini LLM to classify the CVE description.
   Requires the `GEMINI_API_KEY` environment variable (optionally `GEMINI_MODEL`).
+* **`ollama`**: uses a locally running [Ollama](https://ollama.com) server to
+  classify the CVE description. Runs offline with no API key; pull a model such
+  as `qwen2.5:3b-instruct` first (optionally set `OLLAMA_HOST` / `OLLAMA_MODEL`).
 
 ```
 export GEMINI_API_KEY="your-api-key"
