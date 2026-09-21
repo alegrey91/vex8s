@@ -109,18 +109,18 @@ mitigation decision. `vex8s` supports three classifier engines via `--classifier
 * **`gemini`**: uses Google's Gemini LLM to classify the CVE description.
   Requires the `GEMINI_API_KEY` environment variable (optionally `GEMINI_MODEL`).
 * **`ollama`**: uses a locally running [Ollama](https://ollama.com) server to
-  classify the CVE description. Runs offline with no API key; pull a model such
+  classify the CVE description. Pull a model such
   as `qwen2.5:3b-instruct` first (optionally set `OLLAMA_HOST` / `OLLAMA_MODEL`).
 
 ```
 export GEMINI_API_KEY="your-api-key"
 
 vex8s generate --manifest examples/nginx.yaml --report nginx.trivy.json \
-  --output nginx.vex.json --classifier gemini
+  --output nginx.vex.json --classifier ollama
 ```
 
-See the [documentation](./docs) — in particular the
-[User Guide](./docs/user-guide.md) — for a full walkthrough, the Gemini
+See the [documentation](./docs), in particular the
+[User Guide](./docs/user-guide.md) for a full walkthrough, the Gemini and Ollama
 classifier setup, and a complete flag reference.
 
 ## References
