@@ -210,7 +210,7 @@ func init() {
 	generateCmd.Flags().StringVarP(&outputPath, "output", "o", "", "output VEX file path")
 
 	// Decision flags
-	generateCmd.Flags().StringVar(&classifierEngine, "classifier", "embedded", "classifier engine [embedded, gemini]")
+	generateCmd.Flags().StringVar(&classifierEngine, "classifier", "embedded", "classifier engine [embedded, gemini, ollama]")
 
 	// Show flags
 	generateCmd.Flags().BoolVar(&showCVEs, "show.cve", false, "show CVE list")

@@ -9,6 +9,7 @@ import (
 	"github.com/alegrey91/vex8s/pkg/classifier"
 	"github.com/alegrey91/vex8s/pkg/classifier/embedded"
 	"github.com/alegrey91/vex8s/pkg/classifier/gemini"
+	"github.com/alegrey91/vex8s/pkg/classifier/ollama"
 )
 
 // Engine identifies a classifier backend selectable by the user.
@@ -23,6 +24,9 @@ const (
 	// EngineGemini uses Google's Gemini API to classify CVE descriptions.
 	// Requires the GEMINI_API_KEY environment variable.
 	EngineGemini Engine = "gemini"
+	// EngineOllama uses a locally running Ollama server to classify CVE
+	// descriptions. Runs offline; requires no API key.
+	EngineOllama Engine = "ollama"
 )
 
 // Options carries backend-specific configuration. LLM backends will read fields
@@ -63,6 +67,8 @@ func Validate(opts Options) error {
 		return fmt.Errorf("classifier engine %q is not implemented yet", opts.Engine)
 	case EngineGemini:
 		return gemini.Validate()
+	case EngineOllama:
+		return ollama.Validate()
 	default:
 		return fmt.Errorf("unknown classifier engine %q", opts.Engine)
 	}
@@ -76,6 +82,8 @@ func build(opts Options) (classifier.Classifier, error) {
 		return nil, fmt.Errorf("classifier engine %q is not implemented yet", opts.Engine)
 	case EngineGemini:
 		return gemini.New(opts.ShowClassification)
+	case EngineOllama:
+		return ollama.New(opts.ShowClassification)
 	default:
 		return nil, fmt.Errorf("unknown classifier engine %q", opts.Engine)
 	}
