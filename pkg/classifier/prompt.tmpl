@@ -11,8 +11,6 @@ Guidelines:
 - Do not include "other" together with any specific class.
 
 CVE to classify:
-ID: {{.CVE.ID}}
-{{if .CVE.CWEs}}CWEs: {{join .CVE.CWEs ", "}}
-{{end}}Description: {{.CVE.Description}}
+Description: {{.CVE.Description}}
 
 Return a JSON object with a single field "classes" containing the array of matching class identifiers from the list above.
