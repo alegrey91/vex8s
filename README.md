@@ -113,7 +113,8 @@ mitigation decision. `vex8s` supports three classifier engines via `--classifier
   as `qwen2.5:3b-instruct` first (optionally set `OLLAMA_HOST` / `OLLAMA_MODEL`).
 
 ```
-export GEMINI_API_KEY="your-api-key"
+export OLLAMA_HOST="http://localhost:11434"
+export OLLAMA_MODEL="qwen2.5:3b-instruct"
 
 vex8s generate --manifest examples/nginx.yaml --report nginx.trivy.json \
   --output nginx.vex.json --classifier ollama

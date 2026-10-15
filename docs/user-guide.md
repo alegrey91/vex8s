@@ -163,7 +163,7 @@ Add `--show.classification` to watch per-CVE activity on stderr:
 
 ### Serving the model with `llmman`
 
-[`llmman`](https://github.com/alegrey91/llmman) can serve GGUF models behind an
+[`llmman`](https://github.com/llmmanorg/llmman) can serve GGUF models behind an
 Ollama-compatible endpoint, so it works with the `ollama` engine directly.
 
 Pull and serve `qwen2.5:3b-instruct`:
@@ -177,7 +177,8 @@ llmman serve hf.co/Qwen/Qwen2.5-3B-Instruct
 needs no override. Set `OLLAMA_MODEL` to the tag you loaded and run:
 
 ```
-export OLLAMA_MODEL="qwen2.5:3b-instruct"
+export OLLAMA_HOST=http://localhost:17434
+export OLLAMA_MODEL=hf.co/Qwen/Qwen2.5-3B-Instruct:latest
 
 vex8s generate \
   --manifest examples/deployment-nginx-dummy.yaml \
