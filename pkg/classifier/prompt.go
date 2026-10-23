@@ -24,9 +24,10 @@ var classDescriptions = map[class.ExploitClass]string{
 	class.ArbitraryFileRead: "The attacker can read the contents of files on the target filesystem at " +
 		"paths of their choosing (e.g. path traversal / local file inclusion / directory traversal " +
 		"disclosing sensitive files such as /etc/passwd, secrets, or source code).",
-	class.SystemPrivilegesEscalation: "The attacker gains higher privileges at the operating-system / " +
-		"host level, e.g. escalating to root, container escape/breakout to the host, kernel privilege " +
-		"escalation, or abusing setuid/capabilities to gain system-wide control.",
+	class.SystemPrivilegesEscalation: "The attacker GAINS higher privileges they did not have before at the " +
+		"operating-system / host level, e.g. escalating to root, container escape/breakout to the host, kernel " +
+		"privilege escalation, or abusing setuid/capabilities to gain system-wide control. The defining outcome " +
+		"is the acquisition of new OS-level rights or control over the host.",
 	class.ApplicationPrivilegesEscalation: "The attacker gains higher privileges *within the application* " +
 		"without leaving it, e.g. a normal user becoming an admin, authentication/authorization bypass, " +
 		"privilege escalation confined to the app's own permission model.",
